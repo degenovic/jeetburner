@@ -1,6 +1,17 @@
 import { Connection, Transaction } from '@solana/web3.js'
-import { PROGRAM_ID as METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata'
-import { createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata'
+import { 
+  createV1,
+  TokenStandard,
+  mintV1
+} from '@metaplex-foundation/mpl-token-metadata'
+import { 
+  generateSigner, 
+  percentAmount,
+  Umi,
+  publicKey,
+  Signer,
+  signerIdentity
+} from '@metaplex-foundation/umi'
 
 export interface TokenMetadataInput {
   name: string
@@ -14,53 +25,37 @@ export interface TokenMetadataInput {
 }
 
 export const createTokenMetadata = async (
-  connection: Connection,
-  mint: PublicKey,
-  payer: PublicKey,
+  umi: Umi,
+  authority: Signer,
   metadata: TokenMetadataInput,
-  sendTransaction: (transaction: Transaction) => Promise<string>
 ) => {
-  const [metadataAddress] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from('metadata'),
-      METADATA_PROGRAM_ID.toBuffer(),
-      mint.toBuffer(),
-    ],
-    METADATA_PROGRAM_ID
-  )
-
-  // Create the metadata
-  const instruction = createCreateMetadataAccountV3Instruction(
-    {
-      metadata: metadataAddress,
-      mint,
-      mintAuthority: payer,
-      payer,
-      updateAuthority: payer,
-    },
-    {
-      createMetadataAccountArgsV3: {
-        data: {
-          name: metadata.name,
-          symbol: metadata.symbol,
-          uri: '', // We'll update this later with IPFS URI
-          sellerFeeBasisPoints: 0,
-          creators: null,
-          collection: null,
-          uses: null,
-        },
-        isMutable: true,
-        collectionDetails: null,
-      },
-    }
-  )
-
-  const transaction = new Transaction().add(instruction)
-  
   try {
-    const signature = await sendTransaction(transaction)
-    await connection.confirmTransaction(signature, 'confirmed')
-    return metadataAddress
+    const mintKeypair = generateSigner(umi)
+    
+    // Set the authority as the identity
+    umi = umi.use(signerIdentity(authority))
+
+    // Create metadata and mint account
+    await createV1(umi, {
+      mint: mintKeypair,
+      authority: authority,
+      name: metadata.name,
+      symbol: metadata.symbol,
+      uri: '', // We'll update this later with IPFS URI
+      sellerFeeBasisPoints: percentAmount(0), // 0% royalties
+      tokenStandard: TokenStandard.Fungible,
+    }).sendAndConfirm(umi)
+
+    // Mint tokens if needed
+    await mintV1(umi, {
+      mint: mintKeypair.publicKey,
+      authority,
+      amount: 1,
+      tokenOwner: publicKey(authority.publicKey),
+      tokenStandard: TokenStandard.Fungible,
+    }).sendAndConfirm(umi)
+
+    return mintKeypair.publicKey
   } catch (error) {
     console.error('Error creating token metadata:', error)
     throw error
