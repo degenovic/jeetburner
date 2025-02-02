@@ -117,7 +117,7 @@ export default function Home() {
   }
 
   const handleCreateToken = async () => {
-    if (!publicKey || !wallet?.adapter) {
+    if (!publicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
       alert('Please connect your wallet first')
       return
     }
@@ -148,13 +148,36 @@ export default function Home() {
 
       const mint = generateSigner(umi);
 
+      // Create metadata JSON
+      const metadataJson = {
+        name: metadata.name,
+        symbol: metadata.symbol,
+        description: metadata.description || '',
+        image: '', // We'll need to host this image somewhere
+        attributes: [],
+        properties: {
+          files: [],
+          category: 'image',
+          creators: [{
+            address: wallet.adapter.publicKey.toString(),
+            share: 100,
+          }],
+        },
+      };
+
+      // For now, we'll create the token without the image
+      // In a production app, you would:
+      // 1. Upload the image to IPFS or similar
+      // 2. Upload the metadata JSON to IPFS
+      // 3. Use the metadata JSON URL as the URI
+
       // Create token with minimal required data
       await createV1(umi, {
         mint,
         authority: umi.identity,
         name: metadata.name,
         symbol: metadata.symbol,
-        uri: metadata.image || '', // Provide empty string if no image
+        uri: '', // Empty URI for now
         sellerFeeBasisPoints: percentAmount(0),
         tokenStandard: TokenStandard.Fungible,
         decimals: Number(config.decimals),
