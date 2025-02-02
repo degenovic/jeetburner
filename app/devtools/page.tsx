@@ -8,16 +8,17 @@ import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
 import { clusterApiUrl } from '@solana/web3.js'
 import { updateV1, fetchMetadataFromSeeds } from '@metaplex-foundation/mpl-token-metadata'
+import { publicKey } from '@metaplex-foundation/umi'
 import Header from '../components/Header'
 import { Footer } from '../components/Footer'
 
 export default function DevTools() {
-  const { publicKey, wallet } = useWallet()
+  const { publicKey: walletPublicKey, wallet } = useWallet()
   const [isLoading, setIsLoading] = useState(false)
   const [mintAddress, setMintAddress] = useState('')
 
   const handleTestUpdateAuthority = async () => {
-    if (!publicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
+    if (!walletPublicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
       alert('Please connect your wallet first')
       return
     }
@@ -36,11 +37,11 @@ export default function DevTools() {
 
       // Try to update the metadata
       const metadata = await fetchMetadataFromSeeds(umi, { 
-        mint: mintAddress as any 
+        mint: publicKey(mintAddress)
       });
 
       await updateV1(umi, {
-        mint: mintAddress as any,
+        mint: publicKey(mintAddress),
         authority: umi.identity,
         data: {
           ...metadata,
@@ -92,7 +93,7 @@ export default function DevTools() {
                 <div className="flex flex-col gap-4">
                   <Input
                     label="Token Mint Address"
-                    placeholder="Enter the token's mint address"
+                    placeholder="Enter the token&apos;s mint address"
                     value={mintAddress}
                     onChange={(e) => setMintAddress(e.target.value)}
                     description="The mint address of the token you want to test"
@@ -107,8 +108,8 @@ export default function DevTools() {
                     <div>
                       <h3 className="text-white mb-2">Update Authority Test</h3>
                       <p className="text-sm text-gray-400 mb-2">
-                        This test attempts to update the token's metadata. If the update authority 
-                        is properly revoked (isMutable = false), this will fail with an "immutable" error.
+                        This test attempts to update the token&apos;s metadata. If the update authority 
+                        is properly revoked (isMutable = false), this will fail with an &quot;immutable&quot; error.
                       </p>
                       <Button
                         color="primary"
