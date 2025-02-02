@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { Card, CardBody, Button, Tabs, Tab, Checkbox } from '@nextui-org/react'
+import { Button, Checkbox } from '@nextui-org/react'
 import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard, mintV1 } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
@@ -10,7 +10,6 @@ import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
 import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
 import { TOKEN_PROGRAM_ID, createSetAuthorityInstruction, AuthorityType } from '@solana/spl-token'
-import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 
@@ -52,7 +51,6 @@ export default function Home() {
   const { wallet, publicKey } = useWallet()
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   // Token Metadata
   const [metadata, setMetadata] = useState<TokenMetadata>({
@@ -83,7 +81,6 @@ export default function Home() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setMetadata(prev => ({ ...prev, image: reader.result as string }))
@@ -450,21 +447,21 @@ export default function Home() {
                     <div className="space-y-6">
                       <Checkbox
                         isSelected={authorities.revokeMint}
-                        onValueChange={(checked) => updateAuthorities('revokeMint', checked)}
+                        onValueChange={(checked: boolean) => updateAuthorities('revokeMint', checked)}
                       >
                         Revoke Mint Authority (Permanently disable new token minting)
                       </Checkbox>
                       <div className="h-4"></div>
                       <Checkbox
                         isSelected={authorities.revokeFreeze}
-                        onValueChange={(checked) => updateAuthorities('revokeFreeze', checked)}
+                        onValueChange={(checked: boolean) => updateAuthorities('revokeFreeze', checked)}
                       >
                         Revoke Freeze Authority (Permanently disable token freezing)
                       </Checkbox>
                       <div className="h-4"></div>
                       <Checkbox
                         isSelected={authorities.revokeUpdate}
-                        onValueChange={(checked) => updateAuthorities('revokeUpdate', checked)}
+                        onValueChange={(checked: boolean) => updateAuthorities('revokeUpdate', checked)}
                       >
                         Revoke Update Authority (Permanently disable token metadata updates)
                       </Checkbox>
