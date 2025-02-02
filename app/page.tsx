@@ -3,13 +3,18 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Button, Checkbox } from '@nextui-org/react'
-import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard, mintV1 } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
 import { clusterApiUrl } from '@solana/web3.js'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
+
+// Define a type for the wallet adapter
+interface WalletAdapter {
+  publicKey?: { toBase58(): string };
+  sendTransaction?: (transaction: any, connection: any) => Promise<string>;
+}
 
 export default function Home() {
   const { publicKey: walletPublicKey } = useWallet()
@@ -77,8 +82,8 @@ export default function Home() {
       const umi = createUmi(endpoint)
         .use(mplTokenMetadata())
         .use(walletAdapterIdentity(
-          // Use optional chaining and type assertion to handle window.wallet safely
-          (window as any).wallet?.adapter || {} 
+          // Safely type the wallet adapter
+          (window as { wallet?: { adapter?: WalletAdapter } }).wallet?.adapter ?? {}
         ))
 
       // Token creation logic would go here
