@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js'
+import { Connection, PublicKey, Transaction, VersionedTransaction, Keypair } from '@solana/web3.js'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
@@ -40,12 +40,6 @@ interface TokenAuthorities {
 interface TokenConfig {
   supply: string;
   decimals: string;
-}
-
-interface WalletAdapter {
-  publicKey: PublicKey;
-  signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>;
-  signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>;
 }
 
 export default function Home() {
@@ -120,25 +114,26 @@ export default function Home() {
     try {
       const connection = new Connection('https://api.devnet.solana.com')
       
-      // Create mint account
-      const wallet: WalletAdapter = {
-        publicKey,
-        signTransaction,
-        signAllTransactions,
-      }
+      // Create a temporary keypair for the mint creation
+      const payer = Keypair.generate()
+      
+      // Request airdrop for the payer
+      const airdropSignature = await connection.requestAirdrop(payer.publicKey, 1000000000)
+      await connection.confirmTransaction(airdropSignature)
 
+      // Create mint account
       const mint = await createMint(
         connection,
-        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
-        publicKey,
-        publicKey,
+        payer,
+        publicKey, // mint authority
+        publicKey, // freeze authority
         Number(tokenConfig.decimals)
       )
 
       // Get the token account
       const tokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
-        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
+        payer,
         mint,
         publicKey
       )
@@ -146,29 +141,29 @@ export default function Home() {
       // Mint tokens
       await mintTo(
         connection,
-        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
+        payer,
         mint,
         tokenAccount.address,
         publicKey,
-        Number(tokenConfig.supply) * LAMPORTS_PER_SOL
+        Number(tokenConfig.supply) * (10 ** Number(tokenConfig.decimals))
       )
 
-      // Handle authority revocations
+      // Revoke authorities if requested
       if (authorities.revokeMint) {
         await setAuthority(
           connection,
-          wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
+          payer,
           mint,
           publicKey,
           AuthorityType.MintTokens,
-          null // Setting to null revokes the authority
+          null
         )
       }
 
       if (authorities.revokeFreeze) {
         await setAuthority(
           connection,
-          wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
+          payer,
           mint,
           publicKey,
           AuthorityType.FreezeAccount,
