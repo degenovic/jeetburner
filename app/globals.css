@@ -16,14 +16,17 @@ body {
 }
 
 input, textarea {
-  color: black !important;
-  background-color: white !important;
+  font-family: 'JetBrains Mono', 'JetBrains Mono Fallback', monospace;
+}
+
+button {
+  font-family: 'JetBrains Mono', 'JetBrains Mono Fallback', monospace;
 }
 
 .dark input, 
 .dark textarea {
-  color: black !important;
-  background-color: white !important;
+  color: white !important;
+  background-color: rgb(38, 38, 38) !important;
 }
 
 /* Wallet Adapter Custom Styles */
@@ -163,4 +166,112 @@ input, textarea {
 .wallet-adapter-modal-button-close {
   pointer-events: auto !important;
   cursor: pointer !important;
+}
+
+/* Subtle header border */
+.header-border {
+  border-bottom: 1px solid rgb(38, 38, 38);
+}
+
+/* Make app tabs horizontally scrollable */
+.app-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  padding-bottom: 8px; /* Space for potential scrollbar */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.app-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* App box styles */
+.app-box {
+  background-color: black;
+  border: 1px solid rgb(38, 38, 38);
+  border-radius: 12px;
+  padding: 0;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.app-box .app-tabs {
+  background-color: rgb(38, 38, 38);
+  padding: 8px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.app-box .app-tab {
+  background-color: rgb(64, 64, 64);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  border: none;
+  transition: background-color 0.2s;
+}
+
+.app-box .app-tab[data-selected=true] {
+  background-color: rgb(23, 23, 23);
+}
+
+/* Content styles */
+.app-box .app-content {
+  padding: 24px;
+}
+
+.app-box .input-label {
+  display: block;
+  color: rgb(156, 163, 175);
+  font-size: 14px;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.app-box .input-field {
+  width: 100%;
+  background-color: rgb(38, 38, 38) !important;
+  border: 1px solid rgb(64, 64, 64) !important;
+  color: white !important;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 16px;
+}
+
+.app-box .input-description {
+  color: rgb(156, 163, 175);
+  font-size: 12px;
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Add JetBrains Mono font and app styles */
+.app {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  font-feature-settings: normal;
+  font-variation-settings: normal;
+  -webkit-tap-highlight-color: transparent;
+  font-family: 'JetBrains Mono', 'JetBrains Mono Fallback', monospace;
+  font-style: normal;
+  position: relative;
+  display: flex;
+  height: auto;
+  width: 100%;
+  flex: auto;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-wrap: break-word;
+  padding: 0.75rem;
+  text-align: left;
+  -webkit-font-smoothing: auto;
 }

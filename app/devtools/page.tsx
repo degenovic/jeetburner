@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { Card, CardBody, CardHeader, Button, Input, Divider } from '@nextui-org/react'
+import { Button } from '@nextui-org/react'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
@@ -16,6 +16,7 @@ export default function DevTools() {
   const { publicKey: walletPublicKey, wallet } = useWallet()
   const [isLoading, setIsLoading] = useState(false)
   const [mintAddress, setMintAddress] = useState('')
+  const [selectedTab, setSelectedTab] = useState('update')
 
   const handleTestUpdateAuthority = async () => {
     if (!walletPublicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
@@ -77,37 +78,51 @@ export default function DevTools() {
     <div className="min-h-screen bg-black flex flex-col">
       <Header />
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-4xl p-4 sm:p-6 lg:p-8 bg-gradient-to-br from-gray-900 to-black rounded-xl border border-white/20">
-          <h1 className="text-3xl font-bold text-white mb-8 text-center">Developer Tools</h1>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="bg-black/50 border-gray-800">
-              <CardHeader className="flex gap-3">
-                <div className="flex flex-col">
-                  <p className="text-md">Token Authority Tests</p>
-                  <p className="text-small text-default-500">Test if token authorities have been properly revoked</p>
-                </div>
-              </CardHeader>
-              <Divider className="bg-gray-800"/>
-              <CardBody>
-                <div className="flex flex-col gap-4">
-                  <Input
-                    label="Token Mint Address"
-                    placeholder="Enter the token&apos;s mint address"
-                    value={mintAddress}
-                    onChange={(e) => setMintAddress(e.target.value)}
-                    description="The mint address of the token you want to test"
-                    classNames={{
-                      label: "text-white",
-                      input: "bg-black/50 text-white",
-                      description: "text-gray-400"
-                    }}
-                  />
-                  
-                  <div className="space-y-6">
+        <div className="w-full max-w-7xl px-4">
+          <div style={{ marginTop: '75px', marginBottom: '75px' }}>
+            <div className="app-box">
+              <div className="app-tabs">
+                <button 
+                  className="app-tab" 
+                  data-selected={selectedTab === 'update'} 
+                  onClick={() => setSelectedTab('update')}
+                >
+                  Update Authority
+                </button>
+                <button 
+                  className="app-tab" 
+                  data-selected={selectedTab === 'mint'} 
+                  onClick={() => setSelectedTab('mint')}
+                >
+                  Mint Authority
+                </button>
+                <button 
+                  className="app-tab" 
+                  data-selected={selectedTab === 'freeze'} 
+                  onClick={() => setSelectedTab('freeze')}
+                >
+                  Freeze Authority
+                </button>
+              </div>
+
+              <div className="app-content">
+                {selectedTab === 'update' && (
+                  <div>
+                    <div className="mb-6">
+                      <label className="input-label">Token Mint Address</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Enter the token's mint address"
+                        value={mintAddress}
+                        onChange={(e) => setMintAddress(e.target.value)}
+                      />
+                      <p className="input-description">
+                        The mint address of the token you want to test
+                      </p>
+                    </div>
                     <div>
-                      <h3 className="text-white mb-2">Update Authority Test</h3>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-gray-400 mb-4">
                         This test attempts to update the token&apos;s metadata. If the update authority 
                         is properly revoked (isMutable = false), this will fail with an &quot;immutable&quot; error.
                       </p>
@@ -120,10 +135,26 @@ export default function DevTools() {
                         Test Update Authority
                       </Button>
                     </div>
+                  </div>
+                )}
 
+                {selectedTab === 'mint' && (
+                  <div>
+                    <div className="mb-6">
+                      <label className="input-label">Token Mint Address</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Enter the token's mint address"
+                        value={mintAddress}
+                        onChange={(e) => setMintAddress(e.target.value)}
+                      />
+                      <p className="input-description">
+                        The mint address of the token you want to test
+                      </p>
+                    </div>
                     <div>
-                      <h3 className="text-white mb-2">Mint Authority Test</h3>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-gray-400 mb-4">
                         This test attempts to mint new tokens. If the mint authority is properly 
                         revoked, this will fail with a permissions error.
                       </p>
@@ -136,10 +167,26 @@ export default function DevTools() {
                         Test Mint Authority
                       </Button>
                     </div>
+                  </div>
+                )}
 
+                {selectedTab === 'freeze' && (
+                  <div>
+                    <div className="mb-6">
+                      <label className="input-label">Token Mint Address</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        placeholder="Enter the token's mint address"
+                        value={mintAddress}
+                        onChange={(e) => setMintAddress(e.target.value)}
+                      />
+                      <p className="input-description">
+                        The mint address of the token you want to test
+                      </p>
+                    </div>
                     <div>
-                      <h3 className="text-white mb-2">Freeze Authority Test</h3>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-gray-400 mb-4">
                         This test attempts to freeze a token account. If the freeze authority is 
                         properly revoked, this will fail with a permissions error.
                       </p>
@@ -153,22 +200,9 @@ export default function DevTools() {
                       </Button>
                     </div>
                   </div>
-                </div>
-              </CardBody>
-            </Card>
-
-            <Card className="bg-black/50 border-gray-800">
-              <CardHeader className="flex gap-3">
-                <div className="flex flex-col">
-                  <p className="text-md">Token Information</p>
-                  <p className="text-small text-default-500">View detailed information about your token</p>
-                </div>
-              </CardHeader>
-              <Divider className="bg-gray-800"/>
-              <CardBody>
-                <p className="text-gray-400">Token information viewer coming soon...</p>
-              </CardBody>
-            </Card>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
