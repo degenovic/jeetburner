@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl_governance'
+import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction, VersionedTransaction } from '@solana/web3.js'
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 import Image from 'next/image'
@@ -35,7 +35,6 @@ interface TokenMetadata {
 interface TokenAuthorities {
   revokeMint: boolean;
   revokeFreeze: boolean;
-  revokeUpdate: boolean;
 }
 
 interface TokenConfig {
@@ -43,8 +42,14 @@ interface TokenConfig {
   decimals: string;
 }
 
+interface WalletAdapter {
+  publicKey: PublicKey;
+  signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>;
+  signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>;
+}
+
 export default function Home() {
-  const { publicKey, sendTransaction } = useWallet()
+  const { publicKey, signTransaction, signAllTransactions } = useWallet()
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -72,7 +77,6 @@ export default function Home() {
   const [authorities, setAuthorities] = useState<TokenAuthorities>({
     revokeMint: false,
     revokeFreeze: false,
-    revokeUpdate: false,
   })
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,8 +91,18 @@ export default function Home() {
     }
   }
 
-  const updateMetadata = (key: keyof TokenMetadata, value: string) => {
-    setMetadata(prev => ({ ...prev, [key]: value }))
+  const updateMetadata = (key: keyof TokenMetadata | keyof TokenProperties, value: string) => {
+    if (key in metadata) {
+      setMetadata(prev => ({ ...prev, [key]: value }))
+    } else {
+      setMetadata(prev => ({
+        ...prev,
+        properties: {
+          ...prev.properties,
+          [key]: value
+        }
+      }))
+    }
   }
 
   const updateAuthorities = (key: keyof TokenAuthorities, value: boolean) => {
@@ -96,7 +110,7 @@ export default function Home() {
   }
 
   const handleCreateToken = async () => {
-    if (!publicKey) {
+    if (!publicKey || !signTransaction || !signAllTransactions) {
       alert('Please connect your wallet first')
       return
     }
@@ -104,15 +118,18 @@ export default function Home() {
     setIsLoading(true)
 
     try {
-      const connection = new Connection('https://api.devnet.solana.com', 'confirmed')
+      const connection = new Connection('https://api.devnet.solana.com')
       
       // Create mint account
+      const wallet: WalletAdapter = {
+        publicKey,
+        signTransaction,
+        signAllTransactions,
+      }
+
       const mint = await createMint(
         connection,
-        {
-          publicKey,
-          sendTransaction,
-        },
+        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
         publicKey,
         publicKey,
         Number(tokenConfig.decimals)
@@ -121,10 +138,7 @@ export default function Home() {
       // Get the token account
       const tokenAccount = await getOrCreateAssociatedTokenAccount(
         connection,
-        {
-          publicKey,
-          sendTransaction,
-        },
+        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
         mint,
         publicKey
       )
@@ -132,10 +146,7 @@ export default function Home() {
       // Mint tokens
       await mintTo(
         connection,
-        {
-          publicKey,
-          sendTransaction,
-        },
+        wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
         mint,
         tokenAccount.address,
         publicKey,
@@ -146,10 +157,7 @@ export default function Home() {
       if (authorities.revokeMint) {
         await setAuthority(
           connection,
-          {
-            publicKey,
-            sendTransaction,
-          },
+          wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
           mint,
           publicKey,
           AuthorityType.MintTokens,
@@ -160,27 +168,10 @@ export default function Home() {
       if (authorities.revokeFreeze) {
         await setAuthority(
           connection,
-          {
-            publicKey,
-            sendTransaction,
-          },
+          wallet as any, // Type assertion needed because @solana/spl-token expects a Signer
           mint,
           publicKey,
           AuthorityType.FreezeAccount,
-          null
-        )
-      }
-
-      if (authorities.revokeUpdate) {
-        await setAuthority(
-          connection,
-          {
-            publicKey,
-            sendTransaction,
-          },
-          mint,
-          publicKey,
-          AuthorityType.UpdateMetadata,
           null
         )
       }
@@ -343,7 +334,7 @@ export default function Home() {
                                 label="Website"
                                 placeholder="https://"
                                 value={metadata.properties.website || ''}
-                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, website: e.target.value })}
+                                onChange={(e) => updateMetadata('website', e.target.value)}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -352,7 +343,7 @@ export default function Home() {
                                 label="Twitter"
                                 placeholder="@username"
                                 value={metadata.properties.twitter || ''}
-                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, twitter: e.target.value })}
+                                onChange={(e) => updateMetadata('twitter', e.target.value)}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -361,7 +352,7 @@ export default function Home() {
                                 label="Telegram"
                                 placeholder="t.me/"
                                 value={metadata.properties.telegram || ''}
-                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, telegram: e.target.value })}
+                                onChange={(e) => updateMetadata('telegram', e.target.value)}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -370,7 +361,7 @@ export default function Home() {
                                 label="Discord"
                                 placeholder="discord.gg/"
                                 value={metadata.properties.discord || ''}
-                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, discord: e.target.value })}
+                                onChange={(e) => updateMetadata('discord', e.target.value)}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -391,13 +382,6 @@ export default function Home() {
                                 onValueChange={(checked) => updateAuthorities('revokeFreeze', checked)}
                               >
                                 Revoke Freeze Authority (Permanently disable token freezing)
-                              </Checkbox>
-                              <div className="h-4"></div>
-                              <Checkbox
-                                isSelected={authorities.revokeUpdate}
-                                onValueChange={(checked) => updateAuthorities('revokeUpdate', checked)}
-                              >
-                                Revoke Update Authority (Permanently disable metadata updates)
                               </Checkbox>
                               <div className="h-4"></div>
                             </div>
