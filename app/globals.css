@@ -173,22 +173,6 @@ button {
   border-bottom: 1px solid rgb(38, 38, 38);
 }
 
-/* Make app tabs horizontally scrollable */
-.app-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer 10+ */
-  padding-bottom: 8px; /* Space for potential scrollbar */
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-.app-tabs::-webkit-scrollbar {
-  display: none;
-}
-
 /* App box styles */
 .app-box {
   background-color: black;
@@ -201,11 +185,25 @@ button {
   overflow: hidden;
 }
 
+/* Tab styles */
 .app-box .app-tabs {
   background-color: rgb(38, 38, 38);
   padding: 8px;
+  display: flex;
+  gap: 8px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.app-box .app-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .app-box .app-tab {
@@ -217,6 +215,7 @@ button {
   font-family: 'JetBrains Mono', monospace;
   border: none;
   transition: background-color 0.2s;
+  flex-shrink: 0; /* Prevent tab from shrinking */
 }
 
 .app-box .app-tab[data-selected=true] {
