@@ -122,6 +122,22 @@ export default function Home() {
       return
     }
 
+    // Validate input data
+    if (!metadata.name || !metadata.symbol || !config.decimals) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    // Validate lengths
+    if (metadata.name.length > 32) {
+      alert('Token name must be 32 characters or less')
+      return
+    }
+    if (metadata.symbol.length > 10) {
+      alert('Token symbol must be 10 characters or less')
+      return
+    }
+
     try {
       setIsLoading(true);
 
@@ -132,28 +148,31 @@ export default function Home() {
 
       const mint = generateSigner(umi);
 
+      // Create token with minimal required data
       await createV1(umi, {
         mint,
         authority: umi.identity,
         name: metadata.name,
         symbol: metadata.symbol,
-        uri: metadata.image,
+        uri: metadata.image || '', // Provide empty string if no image
         sellerFeeBasisPoints: percentAmount(0),
         tokenStandard: TokenStandard.Fungible,
         decimals: Number(config.decimals),
+        updateAuthority: umi.identity,
       }).sendAndConfirm(umi);
 
+      // Only update metadata if we need to revoke update authority
       if (authorities.revokeUpdate) {
         const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
         await updateV1(umi, {
           mint: mint.publicKey,
           authority: umi.identity,
-          data: { ...initialMetadata },
+          data: initialMetadata,
           isMutable: false,
         }).sendAndConfirm(umi);
       }
 
-      alert('Token created successfully!')
+      alert('Token created successfully! Mint address: ' + mint.publicKey)
     } catch (error) {
       console.error('Error creating token:', error)
       alert(`Error creating token: ${error}`)
