@@ -10,6 +10,22 @@ html {
   background-color: #000000;
 }
 
+body {
+  background-color: black;
+  color: white;
+}
+
+input, textarea {
+  color: black !important;
+  background-color: white !important;
+}
+
+.dark input, 
+.dark textarea {
+  color: black !important;
+  background-color: white !important;
+}
+
 /* Wallet Adapter Custom Styles */
 .wallet-adapter-modal {
   position: fixed;

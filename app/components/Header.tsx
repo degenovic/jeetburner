@@ -9,8 +9,10 @@ export default function Header() {
     <header className="flex justify-between items-center p-4 bg-black text-white border-b border-gray-800">
       <div className="flex items-center">
         <div className="flex items-center gap-2">
-          <Logo size={32} />
-          <span className="text-xl font-bold">CoinBakery</span>
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Logo size={32} />
+            <span className="text-xl font-bold">coinforge</span>
+          </Link>
         </div>
       </div>
       <div className="flex items-center gap-4">
