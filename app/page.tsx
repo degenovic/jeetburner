@@ -151,20 +151,21 @@ export default function Home() {
       const mint = generateSigner(umi);
 
       // Function to retry failed transactions
-      const retryTransaction = async (fn: () => Promise<any>, maxRetries = 3) => {
+      const retryTransaction = async <T,>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
         for (let i = 0; i < maxRetries; i++) {
           try {
             return await fn();
-          } catch (error: any) {
+          } catch (error) {
             if (i === maxRetries - 1) throw error;
-            if (error.message?.includes('Blockhash not found')) {
+            if (error instanceof Error && error.message?.includes('Blockhash not found')) {
               console.log(`Retrying transaction... Attempt ${i + 2}/${maxRetries}`);
-              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+              await new Promise(resolve => setTimeout(resolve, 1000));
               continue;
             }
             throw error;
           }
         }
+        throw new Error('Max retries reached');
       };
 
       // Create token with retry mechanism
@@ -174,14 +175,13 @@ export default function Home() {
           authority: umi.identity,
           name: metadata.name,
           symbol: metadata.symbol,
-          uri: '', // Empty URI for now, will need to add image upload support later
+          uri: '',
           sellerFeeBasisPoints: percentAmount(0),
           tokenStandard: TokenStandard.Fungible,
           decimals: Number(config.decimals),
           updateAuthority: umi.identity,
         }).sendAndConfirm(umi);
 
-        // Only update metadata if we need to revoke update authority
         if (authorities.revokeUpdate) {
           const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
           await updateV1(umi, {
@@ -194,10 +194,9 @@ export default function Home() {
       });
 
       alert('Token created successfully! Mint address: ' + mint.publicKey)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating token:', error)
-      // More descriptive error message
-      const errorMessage = error.message || String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       const userMessage = errorMessage.includes('Blockhash not found')
         ? 'Network error: Please try again in a few moments.'
         : `Error creating token: ${errorMessage}`;
