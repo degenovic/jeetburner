@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+}
+
+html {
+  background-color: #000000;
+}
+
+/* Wallet Adapter Custom Styles */
+.wallet-adapter-modal-wrapper {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: overlayShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 16px;
+}
+
+.wallet-adapter-modal-container {
+  font-family: 'JetBrains Mono', monospace !important;
+  background: black !important;
+  border: 1px solid #333 !important;
+  border-radius: 12px !important;
+  color: white !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.5) !important;
+  animation: contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 360px !important;
+  width: 100% !important;
+  padding: 16px !important;
+  margin: 0 auto !important;
+}
+
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.wallet-adapter-modal-title {
+  font-family: 'JetBrains Mono', monospace !important;
+  color: white !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  margin-bottom: 12px !important;
+  text-align: center !important;
+}
+
+.wallet-adapter-modal-list {
+  background: black !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.wallet-adapter-modal-list li {
+  background: black !important;
+  border: 1px solid #333 !important;
+  border-radius: 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  margin: 0 !important;
+}
+
+.wallet-adapter-modal-list li:last-child {
+  margin-bottom: 0 !important;
+}
+
+.wallet-adapter-modal-list li:hover {
+  background: #111 !important;
+}
+
+.wallet-adapter-button {
+  font-family: 'JetBrains Mono', monospace !important;
+  background: transparent !important;
+  border: 1px solid #333 !important;
+  color: white !important;
+  transition: all 0.15s ease !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+  font-size: 0.75rem !important;
+  width: 100% !important;
+}
+
+.wallet-adapter-button:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: #666 !important;
+}
+
+.wallet-adapter-button-trigger {
+  background: transparent !important;
+}
