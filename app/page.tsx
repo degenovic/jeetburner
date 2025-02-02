@@ -3,34 +3,44 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import dynamic from 'next/dynamic'
-import { Logo } from './components/Logo'
-import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
+import { Connection, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl_governance'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 import Image from 'next/image'
 
-const WalletButton = dynamic(
-  () => import('./components/WalletButton').then(mod => mod.WalletButton),
-  { ssr: false }
-)
+interface TokenAttribute {
+  trait_type: string;
+  value: string | number;
+}
+
+interface TokenProperties {
+  files: Array<{ uri: string; type: string }>;
+  category: string;
+  website?: string;
+  twitter?: string;
+  telegram?: string;
+  discord?: string;
+}
 
 interface TokenMetadata {
-  name: string
-  symbol: string
-  description: string
-  image: string | null
-  website?: string
-  twitter?: string
-  telegram?: string
-  discord?: string
+  name: string;
+  symbol: string;
+  description: string;
+  image: string;
+  attributes: TokenAttribute[];
+  properties: TokenProperties;
 }
 
 interface TokenAuthorities {
-  revokeMint: boolean
-  revokeFreeze: boolean
-  revokeUpdate: boolean
+  revokeMint: boolean;
+  revokeFreeze: boolean;
+  revokeUpdate: boolean;
+}
+
+interface TokenConfig {
+  supply: string;
+  decimals: string;
 }
 
 export default function Home() {
@@ -38,26 +48,22 @@ export default function Home() {
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [nftName, setNftName] = useState("")
-  const [nftSymbol, setNftSymbol] = useState("");
-  const [nftDescription, setNftDescription] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   // Token Metadata
   const [metadata, setMetadata] = useState<TokenMetadata>({
     name: '',
     symbol: '',
     description: '',
-    image: null,
-    website: '',
-    twitter: '',
-    telegram: '',
-    discord: '',
+    image: '',
+    attributes: [],
+    properties: {
+      files: [],
+      category: 'image',
+    },
   })
 
   // Token Configuration
-  const [tokenConfig, setTokenConfig] = useState({
+  const [tokenConfig, setTokenConfig] = useState<TokenConfig>({
     supply: '',
     decimals: '9',
   })
@@ -89,14 +95,18 @@ export default function Home() {
     setAuthorities(prev => ({ ...prev, [key]: value }))
   }
 
-  const createToken = async () => {
-    if (!publicKey) return
+  const handleCreateToken = async () => {
+    if (!publicKey) {
+      alert('Please connect your wallet first')
+      return
+    }
+
+    setIsLoading(true)
 
     try {
-      setIsLoading(true)
       const connection = new Connection('https://api.devnet.solana.com', 'confirmed')
-
-      // Create new token mint
+      
+      // Create mint account
       const mint = await createMint(
         connection,
         {
@@ -332,8 +342,8 @@ export default function Home() {
                               <Input
                                 label="Website"
                                 placeholder="https://"
-                                value={metadata.website}
-                                onChange={(e) => updateMetadata('website', e.target.value)}
+                                value={metadata.properties.website || ''}
+                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, website: e.target.value })}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -341,8 +351,8 @@ export default function Home() {
                               <Input
                                 label="Twitter"
                                 placeholder="@username"
-                                value={metadata.twitter}
-                                onChange={(e) => updateMetadata('twitter', e.target.value)}
+                                value={metadata.properties.twitter || ''}
+                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, twitter: e.target.value })}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -350,8 +360,8 @@ export default function Home() {
                               <Input
                                 label="Telegram"
                                 placeholder="t.me/"
-                                value={metadata.telegram}
-                                onChange={(e) => updateMetadata('telegram', e.target.value)}
+                                value={metadata.properties.telegram || ''}
+                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, telegram: e.target.value })}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -359,8 +369,8 @@ export default function Home() {
                               <Input
                                 label="Discord"
                                 placeholder="discord.gg/"
-                                value={metadata.discord}
-                                onChange={(e) => updateMetadata('discord', e.target.value)}
+                                value={metadata.properties.discord || ''}
+                                onChange={(e) => updateMetadata('properties', { ...metadata.properties, discord: e.target.value })}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -416,7 +426,7 @@ export default function Home() {
                         <div className="mt-12">
                           <Button
                             color="primary"
-                            onClick={createToken}
+                            onClick={handleCreateToken}
                             isLoading={isLoading}
                             isDisabled={!publicKey || !metadata.name || !metadata.symbol || !tokenConfig.supply}
                           >

@@ -1,4 +1,4 @@
-import { Connection, Transaction, sendAndConfirmTransaction } from '@solana/web3.js'
+import { Connection, Transaction } from '@solana/web3.js'
 import { PROGRAM_ID as METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata'
 import { createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata'
 
