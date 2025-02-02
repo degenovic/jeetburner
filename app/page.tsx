@@ -3,10 +3,12 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection } from '@solana/web3.js'
-import { updateV1, fetchMetadataFromSeeds, createV1, TokenStandard, CreateV1InstructionDataArgs, Rule } from '@metaplex-foundation/mpl-token-metadata'
-import { publicKey, some } from '@metaplex-foundation/umi'
-import { createRevokeRule } from '@metaplex-foundation/mpl-token-auth-rules'
+import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard } from '@metaplex-foundation/mpl-token-metadata'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
+import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
+import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
+import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 
@@ -45,7 +47,7 @@ interface TokenConfig {
 }
 
 export default function Home() {
-  const { publicKey, signTransaction, signAllTransactions, wallet } = useWallet()
+  const { wallet, publicKey } = useWallet()
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -115,7 +117,7 @@ export default function Home() {
   }
 
   const handleCreateToken = async () => {
-    if (!publicKey || !wallet) {
+    if (!publicKey || !wallet?.adapter) {
       alert('Please connect your wallet first')
       return
     }
@@ -123,51 +125,31 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      const metadataUri = await createTokenMetadata(umi, publicKey(wallet.publicKey.toString()), {
+      // Initialize umi with wallet adapter
+      const umi = createUmi('https://api.devnet.solana.com')
+        .use(mplTokenMetadata())
+        .use(walletAdapterIdentity(wallet.adapter));
+
+      const mint = generateSigner(umi);
+
+      await createV1(umi, {
+        mint,
+        authority: umi.identity,
         name: metadata.name,
         symbol: metadata.symbol,
-        description: metadata.description,
-        image: metadata.image,
-        website: metadata.properties.website,
-        twitter: metadata.properties.twitter,
-        telegram: metadata.properties.telegram,
-        discord: metadata.properties.discord,
-      });
-
-      const createArgs: CreateV1InstructionDataArgs = {
-        asset: {
-          name: metadata.name,
-          symbol: metadata.symbol,
-          uri: metadataUri,
-          sellerFeeBasisPoints: 0,
-          creators: null,
-          primarySaleHappened: false,
-          isMutable: !authorities.revokeUpdate,
-          tokenStandard: TokenStandard.Fungible,
-          collection: null,
-          uses: null,
-          collectionDetails: null,
-          ruleSet: some({
-            libVersion: 1,
-            ruleSet: [
-              authorities.revokeMint && createRevokeRule('Mint'),
-              authorities.revokeFreeze && createRevokeRule('Freeze'),
-            ].filter(Boolean) as Rule[]
-          })
-        },
+        uri: metadata.image,
+        sellerFeeBasisPoints: percentAmount(0),
+        tokenStandard: TokenStandard.Fungible,
         decimals: Number(config.decimals),
-        amount: BigInt(Number(config.supply) * (10 ** Number(config.decimals)))
-      };
-
-      const mint = await createV1(umi, createArgs).sendAndConfirm(umi);
+      }).sendAndConfirm(umi);
 
       if (authorities.revokeUpdate) {
-        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint });
+        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
         await updateV1(umi, {
-          mint,
-          authority: publicKey(wallet.publicKey.toString()),
+          mint: mint.publicKey,
+          authority: umi.identity,
           data: { ...initialMetadata },
-          newUpdateAuthority: null,
+          isMutable: false,
         }).sendAndConfirm(umi);
       }
 
@@ -278,12 +260,12 @@ export default function Home() {
                               <div className="flex items-center space-x-4">
                                 {selectedFile && (
                                   <div className="mt-4">
-                                    <img
+                                    <Image
                                       src={URL.createObjectURL(selectedFile)}
                                       alt="Selected file preview"
                                       width={200}
                                       height={200}
-                                      className="rounded-lg"
+                                      style={{ objectFit: 'contain' }}
                                     />
                                   </div>
                                 )}
