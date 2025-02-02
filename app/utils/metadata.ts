@@ -1,8 +1,7 @@
-import { Connection, Transaction } from '@solana/web3.js'
 import { 
   createV1,
-  TokenStandard,
-  mintV1
+  mintV1,
+  TokenStandard
 } from '@metaplex-foundation/mpl-token-metadata'
 import { 
   generateSigner, 
