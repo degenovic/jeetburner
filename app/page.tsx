@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useConnection, useWallet } from '@solana/wallet-adapter-react'
+import { useState } from 'react'
+import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
 import dynamic from 'next/dynamic'
 import { Logo } from './components/Logo'
@@ -9,6 +9,7 @@ import { Connection, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
+import Image from 'next/image'
 
 const WalletButton = dynamic(
   () => import('./components/WalletButton').then(mod => mod.WalletButton),
@@ -36,9 +37,12 @@ export default function Home() {
   const { publicKey, sendTransaction } = useWallet()
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
-  const [logoFile, setLogoFile] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [mintAddress, setMintAddress] = useState<string>('')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [nftName, setNftName] = useState("")
+  const [nftSymbol, setNftSymbol] = useState("");
+  const [nftDescription, setNftDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   // Token Metadata
   const [metadata, setMetadata] = useState<TokenMetadata>({
@@ -68,10 +72,9 @@ export default function Home() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      setLogoFile(file)
+      setSelectedFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
-        setLogoPreview(reader.result as string)
         setMetadata(prev => ({ ...prev, image: reader.result as string }))
       }
       reader.readAsDataURL(file)
@@ -104,8 +107,6 @@ export default function Home() {
         publicKey,
         Number(tokenConfig.decimals)
       )
-
-      setMintAddress(mint.toBase58())
 
       // Get the token account
       const tokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -174,18 +175,12 @@ export default function Home() {
         )
       }
 
-      alert('Token created successfully! Mint address: ' + mint.toBase58())
+      alert('Token created successfully!')
     } catch (error) {
       console.error('Error creating token:', error)
       alert('Error creating token. Check console for details.')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const goToRaydium = () => {
-    if (mintAddress) {
-      window.open(`https://raydium.io/liquidity/create-pool?fromMint=${mintAddress}`, '_blank')
     }
   }
 
@@ -285,12 +280,16 @@ export default function Home() {
                             <div>
                               <label className="block text-base font-medium text-white/80 mb-3">Token Logo</label>
                               <div className="flex items-center space-x-4">
-                                {logoPreview && (
-                                  <img
-                                    src={logoPreview}
-                                    alt="Token logo preview"
-                                    className="w-24 h-24 object-cover rounded-lg"
-                                  />
+                                {selectedFile && (
+                                  <div className="mt-4">
+                                    <Image
+                                      src={URL.createObjectURL(selectedFile)}
+                                      alt="Selected file preview"
+                                      width={200}
+                                      height={200}
+                                      className="rounded-lg"
+                                    />
+                                  </div>
                                 )}
                                 <input
                                   type="file"
@@ -399,26 +398,16 @@ export default function Home() {
                             </div>
                           </div>
                         </Tab>
-                        <Tab key="liquidity" title="Add Liquidity" isDisabled={!mintAddress}>
+                        <Tab key="liquidity" title="Add Liquidity" isDisabled={!publicKey}>
                           <div className="space-y-6 py-4">
                             <div className="text-center">
                               <h3 className="text-xl font-semibold mb-4">Add Liquidity on Raydium</h3>
-                              {mintAddress ? (
-                                <>
-                                  <p className="mb-4">Your token has been created! The mint address is:</p>
-                                  <code className="block p-3 bg-content2 rounded-lg mb-6 break-all">
-                                    {mintAddress}
-                                  </code>
-                                  <Button
-                                    color="primary"
-                                    onClick={goToRaydium}
-                                  >
-                                    Add Liquidity on Raydium
-                                  </Button>
-                                </>
-                              ) : (
-                                <p>First create your token to add liquidity on Raydium.</p>
-                              )}
+                              <Button
+                                color="primary"
+                                onClick={() => window.open(`https://raydium.io/liquidity/create-pool`, '_blank')}
+                              >
+                                Add Liquidity on Raydium
+                              </Button>
                             </div>
                           </div>
                         </Tab>

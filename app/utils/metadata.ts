@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Transaction, sendAndConfirmTransaction } from '@solana/web3.js'
+import { Connection, Transaction, sendAndConfirmTransaction } from '@solana/web3.js'
 import { PROGRAM_ID as METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata'
 import { createCreateMetadataAccountV3Instruction } from '@metaplex-foundation/mpl-token-metadata'
 
@@ -28,9 +28,6 @@ export const createTokenMetadata = async (
     ],
     METADATA_PROGRAM_ID
   )
-
-  // Format external URL with website if provided
-  const externalUrl = metadata.website || ''
 
   // Create the metadata
   const instruction = createCreateMetadataAccountV3Instruction(
