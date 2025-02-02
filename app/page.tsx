@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard } from '@metaplex-foundation/mpl-token-metadata'
+import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard, mintV1 } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { clusterApiUrl } from '@solana/web3.js'
+import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
+import { TOKEN_PROGRAM_ID, createRevokeInstruction } from '@solana/spl-token'
 import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
@@ -142,7 +143,7 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      // Initialize umi with a reliable RPC endpoint
+      // Initialize umi with wallet adapter
       const endpoint = clusterApiUrl('devnet');
       const umi = createUmi(endpoint)
         .use(mplTokenMetadata())
@@ -170,18 +171,69 @@ export default function Home() {
 
       // Create token with retry mechanism
       await retryTransaction(async () => {
+        // Create the token
         await createV1(umi, {
           mint,
           authority: umi.identity,
           name: metadata.name,
           symbol: metadata.symbol,
-          uri: '',
+          uri: '', // We'll add metadata JSON support later
           sellerFeeBasisPoints: percentAmount(0),
           tokenStandard: TokenStandard.Fungible,
           decimals: Number(config.decimals),
           updateAuthority: umi.identity,
         }).sendAndConfirm(umi);
 
+        // Mint initial supply
+        const supply = BigInt(Number(config.supply) * (10 ** Number(config.decimals)));
+        await mintV1(umi, {
+          mint: mint.publicKey,
+          authority: umi.identity,
+          amount: supply,
+          tokenOwner: umi.identity.publicKey,
+          tokenStandard: TokenStandard.Fungible,
+        }).sendAndConfirm(umi);
+
+        // Revoke authorities if requested
+        if (authorities.revokeMint || authorities.revokeFreeze) {
+          // Convert Umi public key to Solana public key
+          const mintPubkey = new PublicKey(mint.publicKey);
+          const connection = new Connection(endpoint);
+          
+          if (authorities.revokeMint) {
+            const revokeIx = createRevokeInstruction(
+              mintPubkey,
+              new PublicKey(umi.identity.publicKey),
+              [],
+              TOKEN_PROGRAM_ID
+            );
+            const tx = new Transaction().add(revokeIx);
+            const { blockhash } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = new PublicKey(umi.identity.publicKey);
+            
+            // Send transaction using the wallet adapter
+            await wallet.adapter.sendTransaction(tx, connection);
+          }
+
+          if (authorities.revokeFreeze) {
+            const revokeIx = createRevokeInstruction(
+              mintPubkey,
+              new PublicKey(umi.identity.publicKey),
+              [],
+              TOKEN_PROGRAM_ID
+            );
+            const tx = new Transaction().add(revokeIx);
+            const { blockhash } = await connection.getLatestBlockhash();
+            tx.recentBlockhash = blockhash;
+            tx.feePayer = new PublicKey(umi.identity.publicKey);
+            
+            // Send transaction using the wallet adapter
+            await wallet.adapter.sendTransaction(tx, connection);
+          }
+        }
+
+        // Revoke update authority if requested
         if (authorities.revokeUpdate) {
           const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
           await updateV1(umi, {
