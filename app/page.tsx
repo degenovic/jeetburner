@@ -491,7 +491,7 @@ export default function Home() {
                             </div>
                           </div>
                         </Tab>
-                        <Tab key="liquidity" title="Add Liquidity" isDisabled={!publicKey}>
+                        <Tab key="liquidity" title="Liquidity">
                           <div className="space-y-6 py-4">
                             <div className="text-center">
                               <h3 className="text-xl font-semibold mb-4">Add Liquidity on Raydium</h3>
