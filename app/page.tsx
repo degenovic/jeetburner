@@ -8,6 +8,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
+import { clusterApiUrl } from '@solana/web3.js'
 import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
@@ -141,41 +142,66 @@ export default function Home() {
     try {
       setIsLoading(true);
 
-      // Initialize umi with wallet adapter
-      const umi = createUmi('https://api.devnet.solana.com')
+      // Initialize umi with a reliable RPC endpoint
+      const endpoint = clusterApiUrl('devnet');
+      const umi = createUmi(endpoint)
         .use(mplTokenMetadata())
         .use(walletAdapterIdentity(wallet.adapter));
 
       const mint = generateSigner(umi);
 
-      // Create token with minimal required data
-      await createV1(umi, {
-        mint,
-        authority: umi.identity,
-        name: metadata.name,
-        symbol: metadata.symbol,
-        uri: '', // Empty URI for now, will need to add image upload support later
-        sellerFeeBasisPoints: percentAmount(0),
-        tokenStandard: TokenStandard.Fungible,
-        decimals: Number(config.decimals),
-        updateAuthority: umi.identity,
-      }).sendAndConfirm(umi);
+      // Function to retry failed transactions
+      const retryTransaction = async (fn: () => Promise<any>, maxRetries = 3) => {
+        for (let i = 0; i < maxRetries; i++) {
+          try {
+            return await fn();
+          } catch (error: any) {
+            if (i === maxRetries - 1) throw error;
+            if (error.message?.includes('Blockhash not found')) {
+              console.log(`Retrying transaction... Attempt ${i + 2}/${maxRetries}`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+              continue;
+            }
+            throw error;
+          }
+        }
+      };
 
-      // Only update metadata if we need to revoke update authority
-      if (authorities.revokeUpdate) {
-        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
-        await updateV1(umi, {
-          mint: mint.publicKey,
+      // Create token with retry mechanism
+      await retryTransaction(async () => {
+        await createV1(umi, {
+          mint,
           authority: umi.identity,
-          data: initialMetadata,
-          isMutable: false,
+          name: metadata.name,
+          symbol: metadata.symbol,
+          uri: '', // Empty URI for now, will need to add image upload support later
+          sellerFeeBasisPoints: percentAmount(0),
+          tokenStandard: TokenStandard.Fungible,
+          decimals: Number(config.decimals),
+          updateAuthority: umi.identity,
         }).sendAndConfirm(umi);
-      }
+
+        // Only update metadata if we need to revoke update authority
+        if (authorities.revokeUpdate) {
+          const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
+          await updateV1(umi, {
+            mint: mint.publicKey,
+            authority: umi.identity,
+            data: initialMetadata,
+            isMutable: false,
+          }).sendAndConfirm(umi);
+        }
+      });
 
       alert('Token created successfully! Mint address: ' + mint.publicKey)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating token:', error)
-      alert(`Error creating token: ${error}`)
+      // More descriptive error message
+      const errorMessage = error.message || String(error);
+      const userMessage = errorMessage.includes('Blockhash not found')
+        ? 'Network error: Please try again in a few moments.'
+        : `Error creating token: ${errorMessage}`;
+      alert(userMessage);
     } finally {
       setIsLoading(false)
     }
