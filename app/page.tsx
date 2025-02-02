@@ -3,8 +3,16 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, Keypair } from '@solana/web3.js'
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl_token'
+import { createUmi } from '@metaplex-foundation/umi'
+import { createSignerFromKeypair, keypairIdentity } from '@metaplex-foundation/umi'
+import { 
+  updateV1, 
+  fetchMetadataFromSeeds, 
+  TokenStandard,
+  createMetadataAccountV3,
+} from '@metaplex-foundation/mpl-token-metadata'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 import Image from 'next/image'
@@ -105,6 +113,36 @@ export default function Home() {
     setAuthorities(prev => ({ ...prev, [key]: value }))
   }
 
+  const createMetadataAccount = async (
+    connection: Connection,
+    mint: PublicKey,
+    payer: Keypair,
+    updateAuthority: PublicKey
+  ) => {
+    const umi = createUmi('https://api.devnet.solana.com')
+    const payerSigner = createSignerFromKeypair(umi, payer)
+    umi.use(keypairIdentity(payerSigner))
+
+    const metadataData = {
+      name: metadata.name,
+      symbol: metadata.symbol,
+      uri: '', // You would need to upload metadata to Arweave/IPFS first
+      sellerFeeBasisPoints: 0,
+      creators: null,
+      collection: null,
+      uses: null,
+    }
+
+    await createMetadataAccountV3(umi, {
+      mint,
+      mintAuthority: payer,
+      updateAuthority,
+      data: metadataData,
+      isMutable: true,
+      collectionDetails: null,
+    }).sendAndConfirm(umi)
+  }
+
   const handleCreateToken = async () => {
     if (!publicKey || !signTransaction || !signAllTransactions) {
       alert('Please connect your wallet first')
@@ -127,9 +165,17 @@ export default function Home() {
       const mint = await createMint(
         connection,
         payer,
-        publicKey, // mint authority
-        publicKey, // freeze authority
+        publicKey,
+        publicKey,
         Number(tokenConfig.decimals)
+      )
+
+      // Create metadata account
+      await createMetadataAccount(
+        connection,
+        mint,
+        payer,
+        publicKey
       )
 
       // Get the token account
@@ -174,14 +220,17 @@ export default function Home() {
       }
 
       if (authorities.revokeUpdate) {
-        await setAuthority(
-          connection,
-          payer,
+        const umi = createUmi('https://api.devnet.solana.com')
+        const payerSigner = createSignerFromKeypair(umi, payer)
+        umi.use(keypairIdentity(payerSigner))
+
+        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint })
+        await updateV1(umi, {
           mint,
-          publicKey,
-          AuthorityType.UpdateMetadata,
-          null
-        )
+          authority: publicKey,
+          data: { ...initialMetadata, name: metadata.name },
+          isMutable: false, // This will prevent any future updates
+        }).sendAndConfirm(umi)
       }
 
       alert('Token created successfully!')
@@ -396,7 +445,7 @@ export default function Home() {
                                 isSelected={authorities.revokeUpdate}
                                 onValueChange={(checked) => updateAuthorities('revokeUpdate', checked)}
                               >
-                                Revoke Update Authority (Permanently disable token metadata updates)
+                                Revoke Update Authority (Permanently disable metadata updates)
                               </Checkbox>
                               <div className="h-4"></div>
                             </div>
