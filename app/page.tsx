@@ -8,8 +8,8 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
-import { TOKEN_PROGRAM_ID, createRevokeInstruction } from '@solana/spl-token'
+import { clusterApiUrl } from '@solana/web3.js'
+import { TokenProgram } from '@metaplex-foundation/mpl-toolbox'
 import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
@@ -196,40 +196,22 @@ export default function Home() {
 
         // Revoke authorities if requested
         if (authorities.revokeMint || authorities.revokeFreeze) {
-          // Convert Umi public key to Solana public key
-          const mintPubkey = new PublicKey(mint.publicKey);
-          const connection = new Connection(endpoint);
-          
           if (authorities.revokeMint) {
-            const revokeIx = createRevokeInstruction(
-              mintPubkey,
-              new PublicKey(umi.identity.publicKey),
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            const tx = new Transaction().add(revokeIx);
-            const { blockhash } = await connection.getLatestBlockhash();
-            tx.recentBlockhash = blockhash;
-            tx.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            // Send transaction using the wallet adapter
-            await wallet.adapter.sendTransaction(tx, connection);
+            await TokenProgram.setAuthority(umi, {
+              mint: mint.publicKey,
+              currentAuthority: umi.identity,
+              authorityType: 'MintTokens',
+              newAuthority: null,
+            }).sendAndConfirm(umi);
           }
 
           if (authorities.revokeFreeze) {
-            const revokeIx = createRevokeInstruction(
-              mintPubkey,
-              new PublicKey(umi.identity.publicKey),
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            const tx = new Transaction().add(revokeIx);
-            const { blockhash } = await connection.getLatestBlockhash();
-            tx.recentBlockhash = blockhash;
-            tx.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            // Send transaction using the wallet adapter
-            await wallet.adapter.sendTransaction(tx, connection);
+            await TokenProgram.setAuthority(umi, {
+              mint: mint.publicKey,
+              currentAuthority: umi.identity,
+              authorityType: 'FreezeAccount',
+              newAuthority: null,
+            }).sendAndConfirm(umi);
           }
         }
 
