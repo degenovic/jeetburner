@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@metaplex-foundation/mpl-token-auth-rules": "^3.0.3",
     "@metaplex-foundation/mpl-token-metadata": "^3.3.0",
     "@metaplex-foundation/umi": "^0.9.2",
     "@metaplex-foundation/umi-bundle-defaults": "^0.9.2",

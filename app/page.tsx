@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, Keypair } from '@solana/web3.js'
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
-import { updateV1, fetchMetadataFromSeeds } from '@metaplex-foundation/mpl-token-metadata'
+import { Connection } from '@solana/web3.js'
+import { updateV1, fetchMetadataFromSeeds, createV1, TokenStandard, CreateV1InstructionDataArgs, Rule } from '@metaplex-foundation/mpl-token-metadata'
+import { publicKey, some } from '@metaplex-foundation/umi'
+import { createRevokeRule } from '@metaplex-foundation/mpl-token-auth-rules'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
-import Image from 'next/image'
 
 interface TokenAttribute {
   trait_type: string;
@@ -46,7 +45,7 @@ interface TokenConfig {
 }
 
 export default function Home() {
-  const { publicKey, signTransaction, signAllTransactions } = useWallet()
+  const { publicKey, signTransaction, signAllTransactions, wallet } = useWallet()
   const [selectedTab, setSelectedTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -65,7 +64,7 @@ export default function Home() {
   })
 
   // Token Configuration
-  const [tokenConfig, setTokenConfig] = useState<TokenConfig>({
+  const [config, setConfig] = useState<TokenConfig>({
     supply: '',
     decimals: '9',
   })
@@ -116,22 +115,13 @@ export default function Home() {
   }
 
   const handleCreateToken = async () => {
-    if (!publicKey || !signTransaction || !signAllTransactions) {
+    if (!publicKey || !wallet) {
       alert('Please connect your wallet first')
       return
     }
 
-    setIsLoading(true)
-
     try {
-      const connection = new Connection('https://api.devnet.solana.com')
-      
-      // Create a temporary keypair for the mint creation
-      const payer = Keypair.generate()
-      
-      // Request airdrop for the payer
-      const airdropSignature = await connection.requestAirdrop(payer.publicKey, 1000000000)
-      await connection.confirmTransaction(airdropSignature)
+      setIsLoading(true);
 
       const metadataUri = await createTokenMetadata(umi, publicKey(wallet.publicKey.toString()), {
         name: metadata.name,
@@ -165,33 +155,11 @@ export default function Home() {
             ].filter(Boolean) as Rule[]
           })
         },
-        decimals: Number(tokenConfig.decimals),
-        amount: BigInt(Number(tokenConfig.supply) * (10 ** Number(tokenConfig.decimals)))
+        decimals: Number(config.decimals),
+        amount: BigInt(Number(config.supply) * (10 ** Number(config.decimals)))
       };
 
       const mint = await createV1(umi, createArgs).sendAndConfirm(umi);
-      
-      if (authorities.revokeMint) {
-        await setAuthority(
-          connection,
-          payer,
-          mint,
-          publicKey,
-          AuthorityType.MintTokens,
-          null
-        )
-      }
-
-      if (authorities.revokeFreeze) {
-        await setAuthority(
-          connection,
-          payer,
-          mint,
-          publicKey,
-          AuthorityType.FreezeAccount,
-          null
-        )
-      }
 
       if (authorities.revokeUpdate) {
         const initialMetadata = await fetchMetadataFromSeeds(umi, { mint });
@@ -310,7 +278,7 @@ export default function Home() {
                               <div className="flex items-center space-x-4">
                                 {selectedFile && (
                                   <div className="mt-4">
-                                    <Image
+                                    <img
                                       src={URL.createObjectURL(selectedFile)}
                                       alt="Selected file preview"
                                       width={200}
@@ -337,8 +305,8 @@ export default function Home() {
                                 label="Total Supply"
                                 placeholder="Enter total supply"
                                 type="number"
-                                value={tokenConfig.supply}
-                                onChange={(e) => setTokenConfig(prev => ({ ...prev, supply: e.target.value }))}
+                                value={config.supply}
+                                onChange={(e) => setConfig(prev => ({ ...prev, supply: e.target.value }))}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -347,8 +315,8 @@ export default function Home() {
                                 label="Decimals"
                                 placeholder="Enter decimals"
                                 type="number"
-                                value={tokenConfig.decimals}
-                                onChange={(e) => setTokenConfig(prev => ({ ...prev, decimals: e.target.value }))}
+                                value={config.decimals}
+                                onChange={(e) => setConfig(prev => ({ ...prev, decimals: e.target.value }))}
                               />
                               <div className="h-4"></div>
                             </div>
@@ -446,7 +414,7 @@ export default function Home() {
                             color="primary"
                             onClick={handleCreateToken}
                             isLoading={isLoading}
-                            isDisabled={!publicKey || !metadata.name || !metadata.symbol || !tokenConfig.supply}
+                            isDisabled={!publicKey || !metadata.name || !metadata.symbol || !config.supply}
                           >
                             Create Token
                           </Button>
