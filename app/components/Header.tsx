@@ -19,7 +19,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Logo size={32} />
-            <span className="text-xl font-bold">coinforge</span>
+            <span className="text-xl font-bold">coinbrew</span>
           </Link>
         </div>
       </div>

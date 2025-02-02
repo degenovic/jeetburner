@@ -6,9 +6,9 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-white font-semibold mb-4">CoinForge</h3>
+            <h3 className="text-white font-semibold mb-4">CoinBrew</h3>
             <p className="text-gray-400 text-sm">
-              The easiest way to create and launch your Solana token. Built with ❤️ for the Solana community.
+              The easiest way to create and launch your Solana token. Built with ❤️+🍺 for the Solana community.
             </p>
           </div>
           <div>
@@ -60,7 +60,7 @@ export function Footer() {
         </div>
         <div className="mt-8 pt-8 border-t border-gray-800">
           <p className="text-center text-gray-400 text-sm">
-            © {new Date().getFullYear()} CoinForge. All rights reserved.
+            © {new Date().getFullYear()} CoinBrew. All rights reserved.
           </p>
         </div>
       </div>
