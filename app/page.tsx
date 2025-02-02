@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
 import { Connection, Keypair, PublicKey } from '@solana/web3.js'
-import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl_token'
+import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
 import { createUmi } from '@metaplex-foundation/umi'
 import { createSignerFromKeypair, keypairIdentity } from '@metaplex-foundation/umi'
 import { 
