@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, PublicKey, Transaction, VersionedTransaction, Keypair } from '@solana/web3.js'
+import { Connection, Keypair } from '@solana/web3.js'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
