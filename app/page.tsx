@@ -8,8 +8,8 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
 import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { clusterApiUrl } from '@solana/web3.js'
-import { TokenProgram } from '@metaplex-foundation/mpl-toolbox'
+import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
+import { TOKEN_PROGRAM_ID, createSetAuthorityInstruction, AuthorityType } from '@solana/spl-token'
 import Image from 'next/image'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
@@ -196,22 +196,44 @@ export default function Home() {
 
         // Revoke authorities if requested
         if (authorities.revokeMint || authorities.revokeFreeze) {
+          const connection = new Connection(endpoint);
+          
           if (authorities.revokeMint) {
-            await TokenProgram.setAuthority(umi, {
-              mint: mint.publicKey,
-              currentAuthority: umi.identity,
-              authorityType: 'MintTokens',
-              newAuthority: null,
-            }).sendAndConfirm(umi);
+            const ix = createSetAuthorityInstruction(
+              new PublicKey(mint.publicKey),
+              new PublicKey(umi.identity.publicKey),
+              AuthorityType.MintTokens,
+              null,
+              [],
+              TOKEN_PROGRAM_ID
+            );
+            
+            const { blockhash } = await connection.getLatestBlockhash();
+            const transaction = new Transaction();
+            transaction.add(ix);
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = new PublicKey(umi.identity.publicKey);
+            
+            await wallet.adapter.sendTransaction(transaction, connection);
           }
 
           if (authorities.revokeFreeze) {
-            await TokenProgram.setAuthority(umi, {
-              mint: mint.publicKey,
-              currentAuthority: umi.identity,
-              authorityType: 'FreezeAccount',
-              newAuthority: null,
-            }).sendAndConfirm(umi);
+            const ix = createSetAuthorityInstruction(
+              new PublicKey(mint.publicKey),
+              new PublicKey(umi.identity.publicKey),
+              AuthorityType.FreezeAccount,
+              null,
+              [],
+              TOKEN_PROGRAM_ID
+            );
+            
+            const { blockhash } = await connection.getLatestBlockhash();
+            const transaction = new Transaction();
+            transaction.add(ix);
+            transaction.recentBlockhash = blockhash;
+            transaction.feePayer = new PublicKey(umi.identity.publicKey);
+            
+            await wallet.adapter.sendTransaction(transaction, connection);
           }
         }
 
