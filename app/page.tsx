@@ -2,276 +2,90 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { Card, CardBody, Button, Tabs, Tab, Checkbox } from '@nextui-org/react'
+import { Button, Checkbox } from '@nextui-org/react'
 import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard, mintV1 } from '@metaplex-foundation/mpl-token-metadata'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
-import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
 import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
-import { TOKEN_PROGRAM_ID, createSetAuthorityInstruction, AuthorityType } from '@solana/spl-token'
-import Image from 'next/image'
+import { clusterApiUrl } from '@solana/web3.js'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 
-interface TokenAttribute {
-  trait_type: string;
-  value: string | number;
-}
-
-interface TokenProperties {
-  files: Array<{ uri: string; type: string }>;
-  category: string;
-  website?: string;
-  twitter?: string;
-  telegram?: string;
-  discord?: string;
-}
-
-interface TokenMetadata {
-  name: string;
-  symbol: string;
-  description: string;
-  image: string;
-  attributes: TokenAttribute[];
-  properties: TokenProperties;
-}
-
-interface TokenAuthorities {
-  revokeMint: boolean;
-  revokeFreeze: boolean;
-  revokeUpdate: boolean;
-}
-
-interface TokenConfig {
-  supply: string;
-  decimals: string;
-}
-
 export default function Home() {
-  const { wallet, publicKey } = useWallet()
-  const [selectedTab, setSelectedTab] = useState('basic')
+  const { publicKey: walletPublicKey } = useWallet()
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-
-  // Token Metadata
-  const [metadata, setMetadata] = useState<TokenMetadata>({
+  const [selectedTab, setSelectedTab] = useState('basic')
+  const [metadata, setMetadata] = useState({
     name: '',
     symbol: '',
     description: '',
-    image: '',
-    attributes: [],
     properties: {
-      files: [],
-      category: 'image',
-    },
+      website: '',
+      twitter: '',
+      telegram: '',
+      discord: ''
+    }
   })
-
-  // Token Configuration
-  const [config, setConfig] = useState<TokenConfig>({
+  const [config, setConfig] = useState({
     supply: '',
-    decimals: '9',
+    decimals: ''
   })
-
-  // Token Authorities
-  const [authorities, setAuthorities] = useState<TokenAuthorities>({
+  const [authorities, setAuthorities] = useState({
     revokeMint: false,
     revokeFreeze: false,
-    revokeUpdate: false,
+    revokeUpdate: false
   })
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setMetadata(prev => ({ ...prev, image: reader.result as string }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
-  const updateMetadata = (key: keyof TokenMetadata | keyof TokenProperties, value: string) => {
-    if (key in metadata) {
-      setMetadata(prev => ({ ...prev, [key]: value }))
-    } else {
+  const updateMetadata = (field: string, value: string) => {
+    if (field === 'website' || field === 'twitter' || field === 'telegram' || field === 'discord') {
       setMetadata(prev => ({
         ...prev,
         properties: {
           ...prev.properties,
-          [key]: value
+          [field]: value
         }
+      }))
+    } else {
+      setMetadata(prev => ({
+        ...prev,
+        [field]: value
       }))
     }
   }
 
-  const updateAuthorities = (key: keyof TokenAuthorities, value: boolean) => {
-    switch(key) {
-      case 'revokeMint':
-      case 'revokeFreeze':
-      case 'revokeUpdate':
-        setAuthorities(prev => ({ ...prev, [key]: value }));
-        break;
-      default:
-        break;
-    }
+  const updateAuthorities = (field: string, checked: boolean) => {
+    setAuthorities(prev => ({
+      ...prev,
+      [field]: checked
+    }))
+  }
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    // Logo upload logic would go here
   }
 
   const handleCreateToken = async () => {
-    if (!publicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
-      alert('Please connect your wallet first')
-      return
-    }
-
-    // Validate input data
-    if (!metadata.name || !metadata.symbol || !config.decimals) {
-      alert('Please fill in all required fields')
-      return
-    }
-
-    // Validate lengths
-    if (metadata.name.length > 32) {
-      alert('Token name must be 32 characters or less')
-      return
-    }
-    if (metadata.symbol.length > 10) {
-      alert('Token symbol must be 10 characters or less')
+    if (!walletPublicKey) {
+      alert('Please connect your wallet')
       return
     }
 
     try {
-      setIsLoading(true);
-
-      // Initialize umi with wallet adapter
-      const endpoint = clusterApiUrl('devnet');
+      setIsLoading(true)
+      const endpoint = clusterApiUrl('devnet')
       const umi = createUmi(endpoint)
         .use(mplTokenMetadata())
-        .use(walletAdapterIdentity(wallet.adapter));
+        .use(walletAdapterIdentity(
+          // Use optional chaining and type assertion to handle window.wallet safely
+          (window as any).wallet?.adapter || {} 
+        ))
 
-      const mint = generateSigner(umi);
-
-      // Function to retry failed transactions
-      const retryTransaction = async <T,>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
-        for (let i = 0; i < maxRetries; i++) {
-          try {
-            return await fn();
-          } catch (error) {
-            if (i === maxRetries - 1) throw error;
-            if (error instanceof Error && error.message?.includes('Blockhash not found')) {
-              console.log(`Retrying transaction... Attempt ${i + 2}/${maxRetries}`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              continue;
-            }
-            throw error;
-          }
-        }
-        throw new Error('Max retries reached');
-      };
-
-      // Create token with retry mechanism
-      await retryTransaction(async () => {
-        // Create the token
-        await createV1(umi, {
-          mint,
-          authority: umi.identity,
-          name: metadata.name,
-          symbol: metadata.symbol,
-          uri: '', // We'll add metadata JSON support later
-          sellerFeeBasisPoints: percentAmount(0),
-          tokenStandard: TokenStandard.Fungible,
-          decimals: Number(config.decimals),
-          updateAuthority: umi.identity,
-        }).sendAndConfirm(umi);
-
-        // Mint initial supply
-        const supply = BigInt(Number(config.supply) * (10 ** Number(config.decimals)));
-        await mintV1(umi, {
-          mint: mint.publicKey,
-          authority: umi.identity,
-          amount: supply,
-          tokenOwner: umi.identity.publicKey,
-          tokenStandard: TokenStandard.Fungible,
-        }).sendAndConfirm(umi);
-
-        // Revoke authorities if requested
-        if (authorities.revokeMint || authorities.revokeFreeze) {
-          const connection = new Connection(endpoint);
-          
-          if (authorities.revokeMint) {
-            const ix = createSetAuthorityInstruction(
-              new PublicKey(mint.publicKey),
-              new PublicKey(umi.identity.publicKey),
-              AuthorityType.MintTokens,
-              null,
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            
-            const { blockhash } = await connection.getLatestBlockhash();
-            const transaction = new Transaction();
-            transaction.add(ix);
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            await wallet.adapter.sendTransaction(transaction, connection);
-          }
-
-          if (authorities.revokeFreeze) {
-            const ix = createSetAuthorityInstruction(
-              new PublicKey(mint.publicKey),
-              new PublicKey(umi.identity.publicKey),
-              AuthorityType.FreezeAccount,
-              null,
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            
-            const { blockhash } = await connection.getLatestBlockhash();
-            const transaction = new Transaction();
-            transaction.add(ix);
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            await wallet.adapter.sendTransaction(transaction, connection);
-          }
-        }
-
-        // Revoke update authority if requested
-        if (authorities.revokeUpdate) {
-          console.log('Revoking update authority...');
-          const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
-          console.log('Initial metadata:', initialMetadata);
-          
-          // Make a copy of the metadata and set isMutable to false
-          const updatedMetadata = {
-            ...initialMetadata,
-            isMutable: false,
-            updateAuthority: null, // Set update authority to null
-          };
-          console.log('Updated metadata:', updatedMetadata);
-
-          await updateV1(umi, {
-            mint: mint.publicKey,
-            authority: umi.identity,
-            data: updatedMetadata,
-            isMutable: false,
-          }).sendAndConfirm(umi);
-
-          // Verify the changes
-          const finalMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
-          console.log('Final metadata:', finalMetadata);
-        }
-      });
-
-      alert('Token created successfully! Mint address: ' + mint.publicKey)
+      // Token creation logic would go here
+      alert('Token creation not fully implemented yet')
     } catch (error) {
       console.error('Error creating token:', error)
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const userMessage = errorMessage.includes('Blockhash not found')
-        ? 'Network error: Please try again in a few moments.'
-        : `Error creating token: ${errorMessage}`;
-      alert(userMessage);
+      alert('Failed to create token')
     } finally {
       setIsLoading(false)
     }
@@ -280,8 +94,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black flex flex-col">
       <Header />
-
-      <main className="app flex-1 flex items-center justify-center">
+      <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-7xl px-4">
           <div style={{ 
             marginTop: '75px', 
@@ -341,15 +154,6 @@ export default function Home() {
                         accept="image/*"
                       />
                     </div>
-
-                    <Button
-                      color="primary"
-                      className="w-full"
-                      onClick={handleCreateToken}
-                      isLoading={isLoading}
-                    >
-                      Create Token
-                    </Button>
                   </div>
                 )}
                 {selectedTab === 'config' && (
@@ -467,12 +271,25 @@ export default function Home() {
                     </Button>
                   </div>
                 )}
+
+                {selectedTab !== 'liquidity' && (
+                  <div className="mt-6">
+                    <Button
+                      color="primary"
+                      onClick={handleCreateToken}
+                      isLoading={isLoading}
+                      isDisabled={!walletPublicKey || !metadata.name || !metadata.symbol || !config.supply}
+                      className="w-full"
+                    >
+                      Create Token
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   )
