@@ -35,6 +35,7 @@ interface TokenMetadata {
 interface TokenAuthorities {
   revokeMint: boolean;
   revokeFreeze: boolean;
+  revokeUpdate: boolean;
 }
 
 interface TokenConfig {
@@ -71,6 +72,7 @@ export default function Home() {
   const [authorities, setAuthorities] = useState<TokenAuthorities>({
     revokeMint: false,
     revokeFreeze: false,
+    revokeUpdate: false,
   })
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,6 +169,17 @@ export default function Home() {
           mint,
           publicKey,
           AuthorityType.FreezeAccount,
+          null
+        )
+      }
+
+      if (authorities.revokeUpdate) {
+        await setAuthority(
+          connection,
+          payer,
+          mint,
+          publicKey,
+          AuthorityType.UpdateMetadata,
           null
         )
       }
@@ -377,6 +390,13 @@ export default function Home() {
                                 onValueChange={(checked) => updateAuthorities('revokeFreeze', checked)}
                               >
                                 Revoke Freeze Authority (Permanently disable token freezing)
+                              </Checkbox>
+                              <div className="h-4"></div>
+                              <Checkbox
+                                isSelected={authorities.revokeUpdate}
+                                onValueChange={(checked) => updateAuthorities('revokeUpdate', checked)}
+                              >
+                                Revoke Update Authority (Permanently disable token metadata updates)
                               </Checkbox>
                               <div className="h-4"></div>
                             </div>
