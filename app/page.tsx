@@ -2,17 +2,11 @@
 
 import { useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
 import { Card, CardBody, Button, Input, Textarea, Tabs, Tab, Checkbox } from '@nextui-org/react'
-import { Connection, Keypair, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair } from '@solana/web3.js'
 import { createMint, getOrCreateAssociatedTokenAccount, mintTo, setAuthority, AuthorityType } from '@solana/spl-token'
-import { createUmi } from '@metaplex-foundation/umi'
-import { createSignerFromKeypair, keypairIdentity } from '@metaplex-foundation/umi'
-import { 
-  updateV1, 
-  fetchMetadataFromSeeds, 
-  TokenStandard,
-  createMetadataAccountV3,
-} from '@metaplex-foundation/mpl-token-metadata'
+import { updateV1, fetchMetadataFromSeeds } from '@metaplex-foundation/mpl-token-metadata'
 import Header from './components/Header'
 import { Footer } from './components/Footer'
 import Image from 'next/image'
@@ -110,37 +104,15 @@ export default function Home() {
   }
 
   const updateAuthorities = (key: keyof TokenAuthorities, value: boolean) => {
-    setAuthorities(prev => ({ ...prev, [key]: value }))
-  }
-
-  const createMetadataAccount = async (
-    connection: Connection,
-    mint: PublicKey,
-    payer: Keypair,
-    updateAuthority: PublicKey
-  ) => {
-    const umi = createUmi('https://api.devnet.solana.com')
-    const payerSigner = createSignerFromKeypair(umi, payer)
-    umi.use(keypairIdentity(payerSigner))
-
-    const metadataData = {
-      name: metadata.name,
-      symbol: metadata.symbol,
-      uri: '', // You would need to upload metadata to Arweave/IPFS first
-      sellerFeeBasisPoints: 0,
-      creators: null,
-      collection: null,
-      uses: null,
+    switch(key) {
+      case 'revokeMint':
+      case 'revokeFreeze':
+      case 'revokeUpdate':
+        setAuthorities(prev => ({ ...prev, [key]: value }));
+        break;
+      default:
+        break;
     }
-
-    await createMetadataAccountV3(umi, {
-      mint,
-      mintAuthority: payer,
-      updateAuthority,
-      data: metadataData,
-      isMutable: true,
-      collectionDetails: null,
-    }).sendAndConfirm(umi)
   }
 
   const handleCreateToken = async () => {
@@ -161,42 +133,44 @@ export default function Home() {
       const airdropSignature = await connection.requestAirdrop(payer.publicKey, 1000000000)
       await connection.confirmTransaction(airdropSignature)
 
-      // Create mint account
-      const mint = await createMint(
-        connection,
-        payer,
-        publicKey,
-        publicKey,
-        Number(tokenConfig.decimals)
-      )
+      const metadataUri = await createTokenMetadata(umi, publicKey(wallet.publicKey.toString()), {
+        name: metadata.name,
+        symbol: metadata.symbol,
+        description: metadata.description,
+        image: metadata.image,
+        website: metadata.properties.website,
+        twitter: metadata.properties.twitter,
+        telegram: metadata.properties.telegram,
+        discord: metadata.properties.discord,
+      });
 
-      // Create metadata account
-      await createMetadataAccount(
-        connection,
-        mint,
-        payer,
-        publicKey
-      )
+      const createArgs: CreateV1InstructionDataArgs = {
+        asset: {
+          name: metadata.name,
+          symbol: metadata.symbol,
+          uri: metadataUri,
+          sellerFeeBasisPoints: 0,
+          creators: null,
+          primarySaleHappened: false,
+          isMutable: !authorities.revokeUpdate,
+          tokenStandard: TokenStandard.Fungible,
+          collection: null,
+          uses: null,
+          collectionDetails: null,
+          ruleSet: some({
+            libVersion: 1,
+            ruleSet: [
+              authorities.revokeMint && createRevokeRule('Mint'),
+              authorities.revokeFreeze && createRevokeRule('Freeze'),
+            ].filter(Boolean) as Rule[]
+          })
+        },
+        decimals: Number(tokenConfig.decimals),
+        amount: BigInt(Number(tokenConfig.supply) * (10 ** Number(tokenConfig.decimals)))
+      };
 
-      // Get the token account
-      const tokenAccount = await getOrCreateAssociatedTokenAccount(
-        connection,
-        payer,
-        mint,
-        publicKey
-      )
-
-      // Mint tokens
-      await mintTo(
-        connection,
-        payer,
-        mint,
-        tokenAccount.address,
-        publicKey,
-        Number(tokenConfig.supply) * (10 ** Number(tokenConfig.decimals))
-      )
-
-      // Revoke authorities if requested
+      const mint = await createV1(umi, createArgs).sendAndConfirm(umi);
+      
       if (authorities.revokeMint) {
         await setAuthority(
           connection,
@@ -220,23 +194,19 @@ export default function Home() {
       }
 
       if (authorities.revokeUpdate) {
-        const umi = createUmi('https://api.devnet.solana.com')
-        const payerSigner = createSignerFromKeypair(umi, payer)
-        umi.use(keypairIdentity(payerSigner))
-
-        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint })
+        const initialMetadata = await fetchMetadataFromSeeds(umi, { mint });
         await updateV1(umi, {
           mint,
-          authority: publicKey,
-          data: { ...initialMetadata, name: metadata.name },
-          isMutable: false, // This will prevent any future updates
-        }).sendAndConfirm(umi)
+          authority: publicKey(wallet.publicKey.toString()),
+          data: { ...initialMetadata },
+          newUpdateAuthority: null,
+        }).sendAndConfirm(umi);
       }
 
       alert('Token created successfully!')
     } catch (error) {
       console.error('Error creating token:', error)
-      alert('Error creating token. Check console for details.')
+      alert(`Error creating token: ${error}`)
     } finally {
       setIsLoading(false)
     }
@@ -445,7 +415,7 @@ export default function Home() {
                                 isSelected={authorities.revokeUpdate}
                                 onValueChange={(checked) => updateAuthorities('revokeUpdate', checked)}
                               >
-                                Revoke Update Authority (Permanently disable metadata updates)
+                                Revoke Update Authority (Permanently disable token metadata updates)
                               </Checkbox>
                               <div className="h-4"></div>
                             </div>
