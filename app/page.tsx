@@ -239,13 +239,28 @@ export default function Home() {
 
         // Revoke update authority if requested
         if (authorities.revokeUpdate) {
+          console.log('Revoking update authority...');
           const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
+          console.log('Initial metadata:', initialMetadata);
+          
+          // Make a copy of the metadata and set isMutable to false
+          const updatedMetadata = {
+            ...initialMetadata,
+            isMutable: false,
+            updateAuthority: null, // Set update authority to null
+          };
+          console.log('Updated metadata:', updatedMetadata);
+
           await updateV1(umi, {
             mint: mint.publicKey,
             authority: umi.identity,
-            data: initialMetadata,
+            data: updatedMetadata,
             isMutable: false,
           }).sendAndConfirm(umi);
+
+          // Verify the changes
+          const finalMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
+          console.log('Final metadata:', finalMetadata);
         }
       });
 
