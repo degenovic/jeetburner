@@ -8,7 +8,7 @@ export function Footer() {
           <div>
             <h3 className="text-white font-semibold mb-4">CoinBrew</h3>
             <p className="text-gray-400 text-sm">
-              The easiest way to create and launch your Solana token. Built with ❤️+🍺 for the Solana community.
+              The easiest way to create and launch your Solana token.
             </p>
           </div>
           <div>

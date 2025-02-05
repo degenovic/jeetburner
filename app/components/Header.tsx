@@ -11,7 +11,8 @@ export default function Header() {
         sticky top-0 z-50 
         flex items-center justify-between 
         px-4 py-3 
-        bg-black 
+        bg-black/80 
+        backdrop-blur-md
         header-border
       "
     >
