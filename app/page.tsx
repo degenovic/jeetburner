@@ -1,5 +1,6 @@
 'use client';
 
+import { redirect } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
@@ -249,6 +250,29 @@ function HomeContent() {
             <p className="text-gray-300 text-2xl">
               Find and close empty token accounts to get your rent back
             </p>
+            <div className="flex justify-center">
+              <button 
+                onClick={() => {
+                  const guideElement = document.getElementById('guide-section');
+                  if (guideElement) {
+                    const headerOffset = document.querySelector('header')?.clientHeight || 0;
+                    const elementPosition = guideElement.getBoundingClientRect().top + window.scrollY;
+                    const offsetPosition = elementPosition - headerOffset - 20; // Adjust for header height and extra margin
+                    window.scrollTo({
+                      top: offsetPosition,
+                      behavior: 'smooth'
+                    });
+                  }
+                }}
+                className="text-gray-400 hover:text-white text-sm mt-2 cursor-pointer underline flex items-center gap-1"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M12 17V16M12 14C12 11 15 11 15 8.5C15 6.5 13.5 5 12 5C10.5 5 9 6.5 9 8.5" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+                WTF is this?
+              </button>
+            </div>
           </div>
 
           {/* Wallet Connection and Search */}
@@ -396,6 +420,7 @@ function HomeContent() {
 
           {/* FAQ Section */}
           <div className="w-full max-w-4xl">
+            <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
             <h2 className="text-4xl font-bold mb-12 text-center text-white">
               &apos;Degen&apos;s Guide to Rent Recovery&apos;
             </h2>
