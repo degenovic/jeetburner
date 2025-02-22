@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: { pubkey: string };
+  params: Promise<{ pubkey: string }>;
   searchParams: { [key: string]: string | string[] | undefined };
 }
 
 export default async function PubkeyPage({ params }: PageProps) {
-  redirect(`/?pubkey=${params.pubkey}`);
+  const resolvedParams = await params;
+  redirect(`/?pubkey=${resolvedParams.pubkey}`);
 }
