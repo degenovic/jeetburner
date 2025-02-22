@@ -23,7 +23,6 @@ export default function Home() {
   const { publicKey, signTransaction, connected } = useWallet();
   const [accounts, setAccounts] = useState<TokenAccount[]>([]);
   const [loading, setLoading] = useState(false);
-  const [network, setNetwork] = useState<'mainnet-beta' | 'devnet'>('devnet');
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -34,124 +33,100 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  if (!process.env.NEXT_PUBLIC_DEVNET_RPC_URL || !process.env.NEXT_PUBLIC_MAINNET_RPC_URL) {
-    console.error('Missing RPC URLs in environment variables');
+  if (!process.env.NEXT_PUBLIC_DEVNET_RPC_URL) {
+    console.error('Missing devnet RPC URL in environment variables');
   }
 
-  const RPC_URLS = {
-    'devnet': process.env.NEXT_PUBLIC_DEVNET_RPC_URL,
-    'mainnet-beta': process.env.NEXT_PUBLIC_MAINNET_RPC_URL
-  };
-
   const connection = useMemo(() => {
-    const endpoint = RPC_URLS[network];
+    const rpcUrl = process.env.NEXT_PUBLIC_DEVNET_RPC_URL;
     
-    if (!endpoint) {
-      toast.error(`No RPC URL configured for ${network}. Please check your environment variables.`);
-      return null;
+    if (!rpcUrl) {
+      toast.error('No RPC URL configured. Please check your environment variables.');
+      return new Connection('https://api.devnet.solana.com');  // Fallback to public devnet
     }
     
-    console.log('Using Helius RPC endpoint for', network);
+    console.log('Initializing connection with RPC URL:', rpcUrl);
     
-    return new Connection(endpoint, {
+    return new Connection(rpcUrl, {
       commitment: 'confirmed',
       confirmTransactionInitialTimeout: 60000,
-      wsEndpoint: undefined,
-      fetch: (url, options) => {
-        const headers = {
-          ...options?.headers,
-          'Content-Type': 'application/json',
-        };
-        
-        // Helius specific configuration
-        return fetch(url, {
-          ...options,
-          headers,
-          cache: 'no-store', // Ensure fresh data
-          method: 'POST',    // Helius prefers POST
-        });
-      }
+      wsEndpoint: undefined // Disable WebSocket
     });
-  }, [network]);
+  }, []);
+
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        console.log('Testing connection...');
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        console.log('Connected successfully!', {
+          blockhash,
+          lastValidBlockHeight
+        });
+      } catch (err: unknown) {
+        console.error('Failed to connect:', err);
+        if (err instanceof Error) {
+          console.error('Error details:', {
+            message: err.message,
+            name: err.name,
+            stack: err.stack
+          });
+        }
+        toast.error('Failed to connect to Solana node. Please check your RPC configuration.');
+      }
+    };
+
+    testConnection();
+  }, [connection]);
 
   const fetchAccounts = useCallback(async () => {
-    if (!publicKey) return;
+    if (!publicKey || !connection) return;
+    
+    setLoading(true);
     
     try {
-      setLoading(true);
-      console.log('Fetching accounts for:', publicKey.toString());
+      const { blockhash } = await connection.getLatestBlockhash();
+      console.log('Connected successfully! Latest blockhash:', blockhash);
       
-      // First verify the connection
-      try {
-        const version = await connection.getVersion();
-        console.log('Connected to Solana node version:', version);
-      } catch (error) {
-        console.error('Failed to connect to RPC:', error);
-        toast.error('Failed to connect to Solana network. Please try again.');
-        return;
-      }
-      
-      // Then fetch the accounts
       const response = await connection.getParsedTokenAccountsByOwner(
         publicKey,
         { programId: TOKEN_PROGRAM_ID },
         'confirmed'
       );
-      
-      console.log('Raw response:', response);
-      
-      // Filter for accounts that have 0 token balance but still have rent-exempt SOL
-      const emptyAccounts = response.value.filter(item => {
-        try {
-          const tokenAmount = item.account.data.parsed.info.tokenAmount;
-          const hasZeroBalance = tokenAmount.amount === '0';
-          const hasSol = item.account.lamports > 0;
-          
-          console.log('Account:', {
-            pubkey: item.pubkey.toString(),
-            lamports: item.account.lamports,
-            balance: tokenAmount.amount,
-            hasZeroBalance,
-            hasSol
-          });
-          
-          return hasZeroBalance && hasSol;
-        } catch (error) {
-          console.error('Error processing account:', error);
-          return false;
-        }
-      });
 
-      console.log('Empty accounts found:', emptyAccounts.length);
-      
-      const accountsWithInfo = emptyAccounts.map(item => ({
-        pubkey: new PublicKey(item.pubkey),
-        lamports: item.account.lamports,
-        mint: item.account.data.parsed.info.mint,
-        tokenAmount: item.account.data.parsed.info.tokenAmount,
-        name: 'Empty Token Account',
-        symbol: 'EMPTY'
-      }));
+      const emptyAccounts: TokenAccount[] = response.value
+        .filter(({ account }) => {
+          const parsedInfo = account.data.parsed.info;
+          return parsedInfo.tokenAmount.uiAmount === 0 && 
+                 parsedInfo.tokenAmount.amount === "0";
+        })
+        .map(({ pubkey, account }) => ({
+          pubkey: new PublicKey(pubkey),
+          lamports: account.lamports,
+          mint: account.data.parsed.info.mint,
+          name: account.data.parsed.info.mint || 'Unknown Token',
+          symbol: 'EMPTY'
+        }));
 
-      console.log('Parsed accounts:', accountsWithInfo);
-      setAccounts(accountsWithInfo);
-      setRetryCount(0);
-      
-    } catch (error) {
+      console.log('Found empty accounts:', emptyAccounts);
+      setAccounts(emptyAccounts);
+    } catch (error: unknown) {
       console.error('Error fetching accounts:', error);
       
-      if (error.message.includes('429') && retryCount < MAX_RETRIES) {
-        const delay = RETRY_DELAY * Math.pow(2, retryCount);
-        toast.error(`Rate limited. Retrying in ${delay/1000} seconds...`);
-        setRetryCount(prev => prev + 1);
-        setTimeout(() => fetchAccounts(), delay);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack
+        });
+        toast.error(`Failed to fetch accounts: ${error.message}`);
       } else {
-        toast.error('Failed to fetch accounts: ' + (error.message || 'Unknown error'));
+        toast.error('Failed to fetch accounts. Please try again.');
       }
     } finally {
       setLoading(false);
     }
-  }, [publicKey, connection, retryCount]);
+  }, [publicKey, connection]);
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
     if (!publicKey || !signTransaction) return;
@@ -159,7 +134,6 @@ export default function Home() {
     try {
       const transaction = new Transaction();
       
-      // Create instruction to close the token account
       const closeInstruction = createCloseAccountInstruction(
         new PublicKey(account.pubkey), // Token account to close
         publicKey,                      // Destination for rent SOL
@@ -169,7 +143,6 @@ export default function Home() {
       
       transaction.add(closeInstruction);
       
-      // Sign and send transaction
       const latestBlockhash = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = latestBlockhash.blockhash;
       transaction.feePayer = publicKey;
@@ -191,12 +164,16 @@ export default function Home() {
       
       toast.success(`Successfully closed account and reclaimed ${(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
       
-      // Refresh the accounts list
       fetchAccounts();
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error burning account:', error);
-      toast.error('Failed to close account: ' + error.message);
+      
+      if (error instanceof Error) {
+        toast.error(`Failed to close account: ${error.message}`);
+      } else {
+        toast.error('Failed to close account. Please try again.');
+      }
     }
   }, [publicKey, signTransaction, connection, fetchAccounts]);
 
@@ -227,9 +204,14 @@ export default function Home() {
       toast.success(`Successfully burned ${selectedAccountsList.length} accounts`);
       setSelectedAccounts(new Set());
       fetchAccounts();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error burning accounts:', error);
-      toast.error('Failed to burn selected accounts');
+      
+      if (error instanceof Error) {
+        toast.error(`Failed to burn selected accounts: ${error.message}`);
+      } else {
+        toast.error('Failed to burn selected accounts. Please try again.');
+      }
     }
   };
 
@@ -254,14 +236,6 @@ export default function Home() {
             <div suppressHydrationWarning>
               <WalletMultiButton />
             </div>
-            <select
-              value={network}
-              onChange={(e) => setNetwork(e.target.value as 'mainnet-beta' | 'devnet')}
-              className="bg-gray-700 text-white rounded px-4 py-2"
-            >
-              <option value="devnet">Devnet</option>
-              <option value="mainnet-beta">Mainnet</option>
-            </select>
           </div>
 
           {connected && (
@@ -278,7 +252,9 @@ export default function Home() {
                   </h3>
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                    <p className="font-bold">{(totalReclaimable / LAMPORTS_PER_SOL).toFixed(4)} SOL</p>
+                    <p className="font-bold">
+                      {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                    </p>
                   </div>
                 </div>
 
@@ -320,7 +296,7 @@ export default function Home() {
                               className="w-4 h-4"
                             />
                             <div>
-                              <p className="font-medium">{account.name} ({account.symbol})</p>
+                              <p className="font-medium">{account.name}</p>
                               <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
                             </div>
                           </div>
