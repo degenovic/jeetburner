@@ -14,6 +14,7 @@ export default function Header() {
         bg-black/80 
         backdrop-blur-md
         header-border
+        mb-8
       "
     >
       <div className="flex items-center">
@@ -25,9 +26,6 @@ export default function Header() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <Link href="/devtools" className="text-sm text-gray-400 hover:text-white transition-colors">
-          Dev Tools
-        </Link>
         <WalletMultiButton />
       </div>
     </header>

@@ -257,224 +257,249 @@ export default function Home() {
       <Header />
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col items-center gap-12">
-          <div className="flex items-center gap-4">
+          {/* Main Heading */}
+          <div className="text-center">
+            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+              Recover Your Rent SOL
+            </h1>
+            <p className="text-gray-300 text-xl">
+              Find and close empty token accounts to get your rent back
+            </p>
+          </div>
+
+          {/* Wallet Connection and Search */}
+          <div className="w-full max-w-4xl flex flex-col items-center gap-6">
             <div suppressHydrationWarning>
               <WalletMultiButton />
             </div>
-          </div>
 
-          <div className="w-full max-w-4xl">
-            {/* Public Key Search */}
-            <div className="mb-8">
-              <div className="flex gap-4 items-center">
-                <input
-                  type="text"
-                  value={searchKey}
-                  onChange={(e) => setSearchKey(e.target.value)}
-                  placeholder="Enter a Solana public key to search"
-                  className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
-                />
-                <button
-                  onClick={handleSearch}
-                  className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded"
-                >
-                  Search
-                </button>
+            <div className="text-gray-400 text-xl font-bold">OR</div>
+
+            <div className="w-full mb-8">
+              {/* Public Key Search */}
+              <div className="mb-8">
+                <div className="flex gap-4 items-center">
+                  <input
+                    type="text"
+                    value={searchKey}
+                    onChange={(e) => setSearchKey(e.target.value)}
+                    placeholder="Enter a Solana public key to search"
+                    className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded"
+                  >
+                    Search
+                  </button>
+                </div>
+                {searchError && (
+                  <p className="text-red-500 mt-2 text-sm">{searchError}</p>
+                )}
               </div>
-              {searchError && (
-                <p className="text-red-500 mt-2 text-sm">{searchError}</p>
+
+              {/* Connected Wallet Info */}
+              {connected && publicKey && (
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
+                  <p className="text-gray-400">{publicKey.toString()}</p>
+                </div>
               )}
             </div>
+          </div>
 
-            {/* Connected Wallet Info */}
-            {connected && publicKey && (
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
-                <p className="text-gray-400">{publicKey.toString()}</p>
+          {/* Account List */}
+          <div className="w-full max-w-4xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">
+                Rent-exempt Accounts ({accounts.length})
+              </h3>
+              <div className="text-right">
+                <p className="text-sm text-gray-400">Total Reclaimable:</p>
+                <p className="font-bold">
+                  {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                </p>
               </div>
-            )}
+            </div>
 
-            {/* Account List */}
-            <div className="w-full">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">
-                  Rent-exempt Accounts ({accounts.length})
-                </h3>
-                <div className="text-right">
-                  <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                  <p className="font-bold">
-                    {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                  </p>
-                </div>
-              </div>
+            {loading ? (
+              <div className="text-center py-8">Loading accounts...</div>
+            ) : (
+              <>
+                {accounts.length > 0 && connected && (
+                  <div className="mb-4">
+                    <button
+                      onClick={burnSelected}
+                      disabled={selectedAccounts.size === 0}
+                      className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                    >
+                      Burn Selected ({selectedAccounts.size})
+                    </button>
+                  </div>
+                )}
 
-              {loading ? (
-                <div className="text-center py-8">Loading accounts...</div>
-              ) : (
-                <>
-                  {accounts.length > 0 && connected && (
-                    <div className="mb-4">
-                      <button
-                        onClick={burnSelected}
-                        disabled={selectedAccounts.size === 0}
-                        className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
-                      >
-                        Burn Selected ({selectedAccounts.size})
-                      </button>
+                <div className="bg-gray-800 rounded-lg overflow-hidden">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.pubkey.toString()}
+                      className="border-b border-gray-700 p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        {connected && (
+                          <input
+                            type="checkbox"
+                            checked={selectedAccounts.has(account.pubkey.toString())}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedAccounts);
+                              if (e.target.checked) {
+                                newSelected.add(account.pubkey.toString());
+                              } else {
+                                newSelected.delete(account.pubkey.toString());
+                              }
+                              setSelectedAccounts(newSelected);
+                            }}
+                            className="w-4 h-4"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">{account.name}</p>
+                          <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <p className="font-medium">
+                          {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                        </p>
+                        {connected && (
+                          <button
+                            onClick={() => burnAccount(account)}
+                            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
+                          >
+                            Burn
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {accounts.length === 0 && (
+                    <div className="p-8 text-center text-gray-400">
+                      No rent-exempt accounts found
                     </div>
                   )}
-
-                  <div className="bg-gray-800 rounded-lg overflow-hidden">
-                    {accounts.map((account) => (
-                      <div
-                        key={account.pubkey.toString()}
-                        className="border-b border-gray-700 p-4 flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-4">
-                          {connected && (
-                            <input
-                              type="checkbox"
-                              checked={selectedAccounts.has(account.pubkey.toString())}
-                              onChange={(e) => {
-                                const newSelected = new Set(selectedAccounts);
-                                if (e.target.checked) {
-                                  newSelected.add(account.pubkey.toString());
-                                } else {
-                                  newSelected.delete(account.pubkey.toString());
-                                }
-                                setSelectedAccounts(newSelected);
-                              }}
-                              className="w-4 h-4"
-                            />
-                          )}
-                          <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-medium">
-                            {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                          </p>
-                          {connected && (
-                            <button
-                              onClick={() => burnAccount(account)}
-                              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
-                            >
-                              Burn
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {accounts.length === 0 && (
-                      <div className="p-8 text-center text-gray-400">
-                        No rent-exempt accounts found
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
-        </div>
 
-        {/* FAQ Section */}
-        <div className="mt-24 max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
-            🔥 Degen's Guide to Rent Recovery 🔥
-          </h2>
-          
-          <div className="space-y-8">
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">🤔 Wen free SOL?</h3>
-              <p className="text-gray-300 space-y-4">
-                Fam, if you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
-              </p>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">💸 How much SOL we talking about?</h3>
-              <p className="text-gray-300 space-y-4">
-                Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
-                If you're a true degen who's been farming every token under the Solana sun, you might have dozens 
-                of these collecting dust. WAGMI! 
-              </p>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">🔍 How do I find my rekt accounts?</h3>
-              <p className="text-gray-300">
-                Just connect your wallet or paste any wallet address above. We'll scan for token accounts that:
-              </p>
-              <div className="mt-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">1.</span>
-                  <span>Have 0 tokens left (you paper-handed everything)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">2.</span>
-                  <span>Still have that sweet rent SOL locked up</span>
-                </div>
+          {/* FAQ Section */}
+          <div className="w-full max-w-4xl">
+            <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+              🔥 Degen's Guide to Rent Recovery 🔥
+            </h2>
+            
+            <div className="space-y-8">
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">🤔 Wen free SOL?</h3>
+                <p className="text-gray-300 space-y-4">
+                  Fam, if you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
+                </p>
+                <p className="text-gray-300 mt-4">
+                  Learn more about rent on Solana in the{' '}
+                  <a 
+                    href="https://solana.com/docs/core/accounts#rent" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-pink-400 hover:text-pink-300 underline"
+                  >
+                    official documentation
+                  </a>
+                  .
+                </p>
               </div>
-              <p className="text-gray-300 mt-4">
-                No cap, it's that simple!
-              </p>
-            </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">🔥 What happens when I burn them?</h3>
-              <p className="text-gray-300">
-                When you burn (close) an empty token account:
-              </p>
-              <div className="mt-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">1.</span>
-                  <span>The rent SOL gets sent back to your wallet</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">2.</span>
-                  <span>The token account gets nuked (but don't worry, you can always make a new one)</span>
-                </div>
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">💸 How much SOL we talking about?</h3>
+                <p className="text-gray-300 space-y-4">
+                  Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
+                  If you're a true degen who's been farming every token under the Solana sun, you might have dozens 
+                  of these collecting dust. WAGMI! 
+                </p>
               </div>
-              <p className="text-gray-300 mt-4">
-                It's basically like getting an airdrop for being messy with your token accounts. Based!
-              </p>
-            </div>
 
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">🤝 Is this safe, ser?</h3>
-              <p className="text-gray-300 space-y-4">
-                Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
-                The code is open source, and we're just using standard Solana instructions. DYOR but this is literally 
-                free money you left on the table!
-              </p>
-            </div>
-
-            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-              <h3 className="text-2xl font-bold mb-4">🚀 Any alpha leaks?</h3>
-              <p className="text-gray-300">
-                Here's some galaxy brain moves:
-              </p>
-              <div className="mt-4 space-y-2">
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">1.</span>
-                  <span>Check your old wallets - your paper hand history might pay off</span>
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">🔍 How do I find my rekt accounts?</h3>
+                <p className="text-gray-300">
+                  Just connect your wallet or paste any wallet address above. We'll scan for token accounts that:
+                </p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">1.</span>
+                    <span>Have 0 tokens left (you paper-handed everything)</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">2.</span>
+                    <span>Still have that sweet rent SOL locked up</span>
+                  </div>
                 </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">2.</span>
-                  <span>Look up your friends' addresses - flex on them with their unclaimed SOL</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="text-pink-400">3.</span>
-                  <span>Make it a habit to clean up after rugging yourself</span>
-                </div>
+                <p className="text-gray-300 mt-4">
+                  No cap, it's that simple!
+                </p>
               </div>
-              <p className="text-gray-300 mt-4">
-                Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 🤫
-              </p>
+
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">🔥 What happens when I burn them?</h3>
+                <p className="text-gray-300">
+                  When you burn (close) an empty token account:
+                </p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">1.</span>
+                    <span>The rent SOL gets sent back to your wallet</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">2.</span>
+                    <span>The token account gets nuked (but don't worry, you can always make a new one)</span>
+                  </div>
+                </div>
+                <p className="text-gray-300 mt-4">
+                  It's basically like getting an airdrop for being messy with your token accounts. Based!
+                </p>
+              </div>
+
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">🤝 Is this safe, ser?</h3>
+                <p className="text-gray-300 space-y-4">
+                  Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
+                  The code is open source, and we're just using standard Solana instructions. DYOR but this is literally 
+                  free money you left on the table!
+                </p>
+              </div>
+
+              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+                <h3 className="text-2xl font-bold mb-4">🚀 Any alpha leaks?</h3>
+                <p className="text-gray-300">
+                  Here's some galaxy brain moves:
+                </p>
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">1.</span>
+                    <span>Check your old wallets - your paper hand history might pay off</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">2.</span>
+                    <span>Look up your friends' addresses - flex on them with their unclaimed SOL</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-pink-400">3.</span>
+                    <span>Make it a habit to clean up after rugging yourself</span>
+                  </div>
+                </div>
+                <p className="text-gray-300 mt-4">
+                  Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 🤫
+                </p>
+              </div>
             </div>
           </div>
         </div>
