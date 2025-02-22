@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const rpcUrl = process.env.MAINNET_RPC_URL;
+  const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
   if (!rpcUrl) {
     return NextResponse.json(
       { error: 'RPC URL not configured' },
@@ -22,7 +22,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const connection = new Connection(rpcUrl, 'confirmed');
+    const connection = new Connection(rpcUrl, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000
+    });
     const publicKey = new PublicKey(pubkey);
 
     const accounts = await connection.getParsedTokenAccountsByOwner(

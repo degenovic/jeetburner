@@ -20,6 +20,12 @@ interface TokenAccount {
   lamports: number;
 }
 
+interface TokenMetadata {
+  mint: string;
+  name: string;
+  symbol: string;
+}
+
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
 function HomeContent() {
@@ -71,10 +77,44 @@ function HomeContent() {
         .map((account: any) => ({
           pubkey: new PublicKey(account.pubkey),
           mint: account.account.data.parsed.info.mint,
-          name: account.account.data.parsed.info.tokenAmount.currency?.name || 'Unknown',
-          symbol: account.account.data.parsed.info.tokenAmount.currency?.symbol || 'Unknown',
+          name: 'Loading...',
+          symbol: '...',
           lamports: account.account.lamports,
         }));
+
+      if (emptyAccounts.length > 0) {
+        try {
+          // Fetch token metadata for all mints
+          const mints = emptyAccounts.map((acc: TokenAccount) => acc.mint).join(',');
+          const metadataResponse = await fetch(`/api/token-metadata?mints=${mints}`);
+          
+          if (!metadataResponse.ok) {
+            throw new Error('Failed to fetch metadata');
+          }
+
+          const metadata = await metadataResponse.json() as TokenMetadata[];
+          console.log('Metadata response:', metadata);
+          
+          // Update accounts with metadata
+          emptyAccounts.forEach((account: TokenAccount) => {
+            const tokenMetadata = metadata.find(m => m.mint === account.mint);
+            if (tokenMetadata) {
+              account.name = tokenMetadata.name || 'Unknown';
+              account.symbol = tokenMetadata.symbol || '???';
+            } else {
+              account.name = 'Unknown';
+              account.symbol = '???';
+            }
+          });
+        } catch (error) {
+          console.error('Error fetching token metadata:', error);
+          // Don't fail the whole operation if metadata fetch fails
+          emptyAccounts.forEach((account: TokenAccount) => {
+            account.name = 'Unknown';
+            account.symbol = '???';
+          });
+        }
+      }
 
       console.log('Empty accounts found:', emptyAccounts.length);
       console.log('Empty accounts details:', emptyAccounts);
