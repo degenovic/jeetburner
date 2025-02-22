@@ -10,18 +10,19 @@ export default function Header() {
       className="
         sticky top-0 z-50 
         flex items-center justify-between 
-        px-4 py-3 
-        bg-black/80 
+        px-6 py-4
+        bg-black/90
         backdrop-blur-md
         header-border
         mb-8
+        border-b border-gray-800
       "
     >
       <div className="flex items-center">
-        <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <Logo size={32} />
-            <span className="text-xl font-bold"></span>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <Logo size={36} />
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">solbeer.money</span>
           </Link>
         </div>
       </div>

@@ -270,7 +270,7 @@ function HomeContent() {
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                   <path d="M12 17V16M12 14C12 11 15 11 15 8.5C15 6.5 13.5 5 12 5C10.5 5 9 6.5 9 8.5" stroke="currentColor" strokeWidth="2"/>
                 </svg>
-                WTF is this?
+                WTF is this
               </button>
             </div>
           </div>
@@ -422,13 +422,13 @@ function HomeContent() {
           <div className="w-full max-w-4xl">
             <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
             <h2 className="text-4xl font-bold mb-12 text-center text-white">
-              &apos;Degen&apos;s Guide to Rent Recovery&apos;
+              <u>&apos;Degen&apos;s Guide to Rent Recovery&apos;</u>
             </h2>
             
             <div className="space-y-8">
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
-                  📝 What is Rent Recovery?
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                🤔 What is Rent Recovery?
                 </h3>
                 <p className="text-gray-300 space-y-4">
                   If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
@@ -437,7 +437,7 @@ function HomeContent() {
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
                   <a 
-                    href="https://spl_governance.crsp.solutions multisig#/" 
+                    href="https://spl_governance.crsp.solutions" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-pink-400 hover:text-pink-300 underline"
@@ -449,7 +449,7 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   💰 How do I close an empty account?
                 </h3>
                 <p className="text-gray-300 space-y-4">
@@ -460,8 +460,8 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
-                  🤔 How do I find my rekt accounts?
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                🔎 How do I find my rekt accounts?
                 </h3>
                 <p className="text-gray-300">
                   Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
@@ -482,7 +482,7 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   🔥 What happens when I burn them?
                 </h3>
                 <p className="text-gray-300">
@@ -504,7 +504,7 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   🚨 Is this safe, ser?
                 </h3>
                 <p className="text-gray-300 space-y-4">
@@ -515,7 +515,7 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">
+                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   💸 Any alpha leaks?
                 </h3>
                 <p className="text-gray-300">
@@ -535,15 +535,43 @@ function HomeContent() {
                     <span>Make it a habit to clean up after rugging yourself</span>
                   </div>
                 </div>
-                <p className="text-gray-300 mt-4">
-                  Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 
-                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-      <Footer />
+      <div style={{ marginTop: '25px' }} />
+
+      {/* Helius Attribution and Footer */}
+      <div className="mt-16">
+        <div className="flex flex-col items-center justify-center text-center mb-16">
+          <div className="text-gray-400 flex items-center gap-2">
+            Powered by
+            <a 
+              href="https://helius.dev" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="flex items-center hover:text-white transition-colors"
+            >
+              <img 
+                src="https://www.helius.dev/logo.svg" 
+                alt="Helius" 
+                className="h-5 inline-block"
+              />
+            </a>
+          </div>
+          <a 
+            href="https://docs.helius.dev" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-gray-400 hover:text-white text-sm mt-2 transition-colors"
+          >
+            View Documentation →
+          </a>
+          <div style={{ marginBottom: '25px' }} />
+        </div>
+        <Footer />
+      </div>
     </main>
   );
 }
