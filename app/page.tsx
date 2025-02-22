@@ -32,6 +32,7 @@ function HomeContent() {
   const [mounted, setMounted] = useState(false);
   const [searchedPubkey, setSearchedPubkey] = useState<PublicKey | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -49,6 +50,7 @@ function HomeContent() {
     try {
       setLoading(true);
       setSearchError('');
+      setHasSearched(true);
       
       const response = await fetch(`/api/accounts?pubkey=${key.toString()}`);
       if (!response.ok) {
@@ -90,10 +92,10 @@ function HomeContent() {
   useEffect(() => {
     if (!mounted) return;
     
-    const pubkey = searchParams.get('pubkey');
-    if (pubkey) {
-      setSearchKey(pubkey);
-      handleSearch(pubkey);
+    const pubkeyParam = searchParams?.get('pubkey');
+    if (pubkeyParam) {
+      setSearchKey(pubkeyParam);
+      handleSearch(pubkeyParam);
     }
   }, [mounted, searchParams]);
 
@@ -122,6 +124,12 @@ function HomeContent() {
       fetchAccounts(publicKey);
     }
   }, [connected, publicKey, fetchAccounts]);
+
+  useEffect(() => {
+    if (!connected) {
+      setHasSearched(false);
+    }
+  }, [connected]);
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
     if (!publicKey || !signTransaction) return;
@@ -238,7 +246,7 @@ function HomeContent() {
             <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
               Recover Your Rent SOL
             </h1>
-            <p className="text-gray-300 text-xl">
+            <p className="text-gray-300 text-2xl">
               Find and close empty token accounts to get your rent back
             </p>
           </div>
@@ -259,7 +267,7 @@ function HomeContent() {
                     type="text"
                     value={searchKey}
                     onChange={(e) => setSearchKey(e.target.value)}
-                    placeholder="Enter a Solana public key to search"
+                    placeholder="Enter a Solana wallet address"
                     className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
                   />
                   <div className="w-fit">
@@ -289,110 +297,114 @@ function HomeContent() {
           </div>
 
           {/* Account List */}
-          <div className="w-full max-w-4xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">
-                Rent-exempt Accounts ({accounts.length})
-              </h3>
-              <div className="text-right">
-                <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
-                  {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                </p>
-                {accounts.length > 0 && connected && (
-                  <button
-                    onClick={handleBurnAttempt}
-                    className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
-                  >
-                    Claim All
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end">
-              {claimError && (
-                <p className="text-red-500 mt-2 text-sm">{claimError}</p>
-              )}
-            </div>
-            {loading ? (
-              <div className="text-center py-8">Loading accounts...</div>
-            ) : (
-              <>
-                {accounts.length > 0 && connected && (
-                  <div className="mb-4">
+          {hasSearched && (
+            <div className="w-full max-w-4xl">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">
+                  Rent-exempt Accounts ({accounts.length})
+                </h3>
+                <div className="text-right">
+                  <p className="text-sm text-gray-400">Total Reclaimable:</p>
+                  <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
+                    {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                  </p>
+                  {accounts.length > 0 && connected && (
                     <button
                       onClick={handleBurnAttempt}
-                      disabled={selectedAccounts.size === 0}
-                      className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                      className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                     >
-                      Burn Selected ({selectedAccounts.size})
+                      Claim All
                     </button>
-                  </div>
-                )}
-
-                <div className="bg-gray-800 rounded-lg overflow-hidden">
-                  {accounts.map((account) => (
-                    <div
-                      key={account.pubkey.toString()}
-                      className="border-b border-gray-700 p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        {connected && (
-                          <input
-                            type="checkbox"
-                            checked={selectedAccounts.has(account.pubkey.toString())}
-                            onChange={(e) => {
-                              const newSelected = new Set(selectedAccounts);
-                              if (e.target.checked) {
-                                newSelected.add(account.pubkey.toString());
-                              } else {
-                                newSelected.delete(account.pubkey.toString());
-                              }
-                              setSelectedAccounts(newSelected);
-                            }}
-                            className="w-4 h-4"
-                          />
-                        )}
-                        <div>
-                          <p className="font-medium">{account.name}</p>
-                          <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <p className="font-medium">
-                          {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                        </p>
-                        {connected && (
-                          <button
-                            onClick={() => burnAccount(account)}
-                            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
-                          >
-                            Burn
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {accounts.length === 0 && (
-                    <div className="p-8 text-center text-gray-400">
-                      No rent-exempt accounts found
-                    </div>
                   )}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+              <div className="flex justify-end">
+                {claimError && (
+                  <p className="text-red-500 mt-2 text-sm">{claimError}</p>
+                )}
+              </div>
+              {loading ? (
+                <div className="text-center py-8">Loading accounts...</div>
+              ) : (
+                <>
+                  {accounts.length > 0 && connected && (
+                    <div className="mb-4">
+                      <button
+                        onClick={handleBurnAttempt}
+                        disabled={selectedAccounts.size === 0}
+                        className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                      >
+                        Burn Selected ({selectedAccounts.size})
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="bg-gray-800 rounded-lg overflow-hidden">
+                    {accounts.map((account) => (
+                      <div
+                        key={account.pubkey.toString()}
+                        className="border-b border-gray-700 p-4 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-4">
+                          {connected && (
+                            <input
+                              type="checkbox"
+                              checked={selectedAccounts.has(account.pubkey.toString())}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedAccounts);
+                                if (e.target.checked) {
+                                  newSelected.add(account.pubkey.toString());
+                                } else {
+                                  newSelected.delete(account.pubkey.toString());
+                                }
+                                setSelectedAccounts(newSelected);
+                              }}
+                              className="w-4 h-4"
+                            />
+                          )}
+                          <div>
+                            <p className="font-medium">{account.name}</p>
+                            <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <p className="font-medium">
+                            {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                          </p>
+                          {connected && (
+                            <button
+                              onClick={() => burnAccount(account)}
+                              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
+                            >
+                              Burn
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {accounts.length === 0 && (
+                      <div className="p-8 text-center text-gray-400">
+                        No rent-exempt accounts found
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {/* FAQ Section */}
           <div className="w-full max-w-4xl">
-            <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+            <h2 className="text-4xl font-bold mb-12 text-center text-white">
               &apos;Degen&apos;s Guide to Rent Recovery&apos;
             </h2>
             
             <div className="space-y-8">
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;Wen free SOL?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  📝 What is Rent Recovery?
+                </h3>
                 <p className="text-gray-300 space-y-4">
                   If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
                   leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but it&apos;s honest work! 
@@ -412,7 +424,9 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;How much SOL we talking about?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  💰 How do I close an empty account?
+                </h3>
                 <p className="text-gray-300 space-y-4">
                   Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
                   If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
@@ -421,7 +435,9 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;How do I find my rekt accounts?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  🤔 How do I find my rekt accounts?
+                </h3>
                 <p className="text-gray-300">
                   Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
                 </p>
@@ -441,7 +457,9 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;What happens when I burn them?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  🔥 What happens when I burn them?
+                </h3>
                 <p className="text-gray-300">
                   When you burn (close) an empty token account:
                 </p>
@@ -461,7 +479,9 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;Is this safe, ser?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  🚨 Is this safe, ser?
+                </h3>
                 <p className="text-gray-300 space-y-4">
                   Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
                   The code is open source, and we&apos;re just using standard Solana instructions. DYOR but this is literally 
@@ -470,7 +490,9 @@ function HomeContent() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">&apos;Any alpha leaks?&apos;</h3>
+                <h3 className="text-2xl font-bold mb-4">
+                  💸 Any alpha leaks?
+                </h3>
                 <p className="text-gray-300">
                   Here&apos;s some galaxy brain moves:
                 </p>
