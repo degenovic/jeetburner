@@ -38,19 +38,10 @@ function HomeContent() {
   }, []);
 
   const connection = useMemo(() => {
-    const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
-    
-    if (!rpcUrl) {
-      toast.error('No RPC URL configured. Please check your environment variables.');
-      return new Connection('https://api.mainnet-beta.solana.com');  // Fallback to public mainnet
-    }
-    
-    console.log('Initializing connection with RPC URL:', rpcUrl);
-    
-    return new Connection(rpcUrl, {
+    // Use public mainnet endpoint for client-side
+    return new Connection('https://api.mainnet-beta.solana.com', {
       commitment: 'confirmed',
       confirmTransactionInitialTimeout: 60000,
-      wsEndpoint: undefined // Disable WebSocket
     });
   }, []);
 
