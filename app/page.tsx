@@ -256,9 +256,9 @@ export default function Home() {
     <main className="min-h-screen bg-black">
       <Header />
       <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col items-center gap-12">
+        <div className="flex flex-col items-center gap-16">
           {/* Main Heading */}
-          <div className="text-center">
+          <div className="text-center mb-8">
             <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
               Recover Your Rent SOL
             </h1>
@@ -406,14 +406,14 @@ export default function Home() {
                   leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
                 </p>
                 <p className="text-gray-300 mt-4">
-                  Learn more about rent on Solana in the{' '}
+                  Learn more about rent on Solana {' '}
                   <a 
                     href="https://solana.com/docs/core/accounts#rent" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-pink-400 hover:text-pink-300 underline"
                   >
-                    official documentation
+                    here
                   </a>
                   .
                 </p>
