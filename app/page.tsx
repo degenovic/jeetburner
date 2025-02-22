@@ -8,6 +8,7 @@ import { createCloseAccountInstruction } from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
 import Header from './components/Header';
 import { Footer } from './components/Footer';
+import { useSearchParams } from 'next/navigation';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -20,6 +21,7 @@ interface TokenAccount {
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const { publicKey, signTransaction, connected } = useWallet();
   const [accounts, setAccounts] = useState<TokenAccount[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,8 @@ export default function Home() {
   const [searchError, setSearchError] = useState('');
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
+  const [searchedPubkey, setSearchedPubkey] = useState<PublicKey | null>(null);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -142,17 +146,35 @@ export default function Home() {
     }
   }, [connection]);
 
-  // Handle public key search
-  const handleSearch = useCallback(() => {
-    setSearchError('');
-    try {
-      const key = new PublicKey(searchKey);
-      fetchAccountsForKey(key);
-    } catch (error) {
-      setSearchError('Invalid public key format');
-      toast.error('Please enter a valid Solana public key');
+  // Auto-search from URL parameter
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const pubkey = searchParams.get('pubkey');
+    if (pubkey) {
+      setSearchKey(pubkey);
+      handleSearch(pubkey);
     }
-  }, [searchKey, fetchAccountsForKey]);
+  }, [mounted, searchParams]);
+
+  const handleSearch = async (key?: string) => {
+    const searchValue = key || searchKey;
+    if (!searchValue) {
+      setSearchError('Please enter a public key');
+      return;
+    }
+
+    try {
+      const pubKey = new PublicKey(searchValue);
+      setSearchError('');
+      setSearchedPubkey(pubKey);
+      setClaimError(null);
+      fetchAccountsForKey(pubKey);
+    } catch (error) {
+      setSearchError('Invalid public key');
+      console.error('Search error:', error);
+    }
+  };
 
   // Fetch accounts when wallet is connected
   useEffect(() => {
@@ -209,6 +231,20 @@ export default function Home() {
       }
     }
   }, [publicKey, signTransaction, connection, fetchAccountsForKey]);
+
+  const checkWalletOwnership = () => {
+    if (!publicKey || !searchedPubkey) return false;
+    return publicKey.toString() === searchedPubkey.toString();
+  };
+
+  const handleBurnAttempt = () => {
+    if (!checkWalletOwnership()) {
+      setClaimError("You are not connected to this wallet.");
+      return;
+    }
+    setClaimError(null);
+    burnSelected();
+  };
 
   const burnSelected = async () => {
     if (!publicKey || !signTransaction) return;
@@ -275,7 +311,7 @@ export default function Home() {
 
             <div className="text-gray-400 text-xl font-bold">OR</div>
 
-            <div className="w-full mb-8">
+            <div className="w-full mb-16">
               {/* Public Key Search */}
               <div className="mb-8">
                 <div className="flex gap-4 items-center">
@@ -288,7 +324,7 @@ export default function Home() {
                   />
                   <div className="w-fit">
                     <button
-                      onClick={handleSearch}
+                      onClick={() => handleSearch()}
                       className="wallet-adapter-button !w-auto px-6 py-2.5"
                     >
                       Search
@@ -300,9 +336,11 @@ export default function Home() {
                 )}
               </div>
 
+              <div className="h-16"></div>
+
               {/* Connected Wallet Info */}
               {connected && publicKey && (
-                <div className="text-center mb-8">
+                <div className="text-center mb-16">
                   <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
                   <p className="text-gray-400">{publicKey.toString()}</p>
                 </div>
@@ -318,15 +356,12 @@ export default function Home() {
               </h3>
               <div className="text-right">
                 <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                <p className="font-bold" style={{ color: '#86efac' }}>
+                <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
                   {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
                 </p>
                 {accounts.length > 0 && connected && (
                   <button
-                    onClick={() => {
-                      setSelectedAccounts(new Set(accounts.map(acc => acc.pubkey.toString())));
-                      burnSelected();
-                    }}
+                    onClick={handleBurnAttempt}
                     className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                   >
                     Claim All
@@ -334,7 +369,11 @@ export default function Home() {
                 )}
               </div>
             </div>
-
+            <div className="flex justify-end">
+              {claimError && (
+                <p className="text-red-500 mt-2 text-sm">{claimError}</p>
+              )}
+            </div>
             {loading ? (
               <div className="text-center py-8">Loading accounts...</div>
             ) : (
@@ -342,7 +381,7 @@ export default function Home() {
                 {accounts.length > 0 && connected && (
                   <div className="mb-4">
                     <button
-                      onClick={burnSelected}
+                      onClick={handleBurnAttempt}
                       disabled={selectedAccounts.size === 0}
                       className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
                     >
