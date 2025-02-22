@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
@@ -447,20 +447,20 @@ export default function Home() {
           {/* FAQ Section */}
           <div className="w-full max-w-4xl">
             <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
-              🔥 Degen's Guide to Rent Recovery 🔥
+              &apos;Degen&apos;s Guide to Rent Recovery&apos;
             </h2>
             
             <div className="space-y-8">
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">🤔 Wen free SOL?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;Wen free SOL?&apos;</h3>
                 <p className="text-gray-300 space-y-4">
-                  If you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
+                  If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but it&apos;s honest work! 
                 </p>
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
                   <a 
-                    href="https://solana.com/docs/core/accounts#rent" 
+                    href="https://spl_governance.crsp.solutions multisig#/" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-pink-400 hover:text-pink-300 underline"
@@ -472,18 +472,18 @@ export default function Home() {
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">💸 How much SOL we talking about?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;How much SOL we talking about?&apos;</h3>
                 <p className="text-gray-300 space-y-4">
                   Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
-                  If you're a true degen who's been farming every token under the Solana sun, you might have dozens 
+                  If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
                   of these collecting dust. WAGMI! 
                 </p>
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">🔍 How do I find my rekt accounts?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;How do I find my rekt accounts?&apos;</h3>
                 <p className="text-gray-300">
-                  Just connect your wallet or paste any wallet address above. We'll scan for token accounts that:
+                  Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
                 </p>
                 <div className="mt-4 space-y-2">
                   <div className="flex items-start gap-2">
@@ -496,12 +496,12 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-300 mt-4">
-                  No cap, it's that simple!
+                  No cap, it&apos;s that simple!
                 </p>
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">🔥 What happens when I burn them?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;What happens when I burn them?&apos;</h3>
                 <p className="text-gray-300">
                   When you burn (close) an empty token account:
                 </p>
@@ -512,27 +512,27 @@ export default function Home() {
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-pink-400">2.</span>
-                    <span>The token account gets nuked (but don't worry, you can always make a new one)</span>
+                    <span>The token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
                   </div>
                 </div>
                 <p className="text-gray-300 mt-4">
-                  It's basically like getting an airdrop for being messy with your token accounts. Based!
+                  It&apos;s basically like getting an airdrop for being messy with your token accounts. Based!
                 </p>
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">🤝 Is this safe, ser?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;Is this safe, ser?&apos;</h3>
                 <p className="text-gray-300 space-y-4">
                   Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
-                  The code is open source, and we're just using standard Solana instructions. DYOR but this is literally 
+                  The code is open source, and we&apos;re just using standard Solana instructions. DYOR but this is literally 
                   free money you left on the table!
                 </p>
               </div>
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4">🚀 Any alpha leaks?</h3>
+                <h3 className="text-2xl font-bold mb-4">&apos;Any alpha leaks?&apos;</h3>
                 <p className="text-gray-300">
-                  Here's some galaxy brain moves:
+                  Here&apos;s some galaxy brain moves:
                 </p>
                 <div className="mt-4 space-y-2">
                   <div className="flex items-start gap-2">
@@ -541,7 +541,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-pink-400">2.</span>
-                    <span>Look up your friends' addresses - flex on them with their unclaimed SOL</span>
+                    <span>Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-pink-400">3.</span>
@@ -549,7 +549,7 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="text-gray-300 mt-4">
-                  Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 🤫
+                  Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 
                 </p>
               </div>
             </div>
