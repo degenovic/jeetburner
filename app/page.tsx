@@ -286,12 +286,14 @@ export default function Home() {
                     placeholder="Enter a Solana public key to search"
                     className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
                   />
-                  <button
-                    onClick={handleSearch}
-                    className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded"
-                  >
-                    Search
-                  </button>
+                  <div className="w-fit">
+                    <button
+                      onClick={handleSearch}
+                      className="wallet-adapter-button !w-auto px-6 py-2.5"
+                    >
+                      Search
+                    </button>
+                  </div>
                 </div>
                 {searchError && (
                   <p className="text-red-500 mt-2 text-sm">{searchError}</p>
@@ -316,9 +318,20 @@ export default function Home() {
               </h3>
               <div className="text-right">
                 <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                <p className="font-bold">
+                <p className="font-bold" style={{ color: '#86efac' }}>
                   {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
                 </p>
+                {accounts.length > 0 && connected && (
+                  <button
+                    onClick={() => {
+                      setSelectedAccounts(new Set(accounts.map(acc => acc.pubkey.toString())));
+                      burnSelected();
+                    }}
+                    className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
+                  >
+                    Claim All
+                  </button>
+                )}
               </div>
             </div>
 
@@ -402,7 +415,7 @@ export default function Home() {
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
                 <h3 className="text-2xl font-bold mb-4">🤔 Wen free SOL?</h3>
                 <p className="text-gray-300 space-y-4">
-                  Fam, if you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                  If you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
                   leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
                 </p>
                 <p className="text-gray-300 mt-4">

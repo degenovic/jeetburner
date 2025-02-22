@@ -21,7 +21,7 @@ export default function Header() {
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Logo size={32} />
-            <span className="text-xl font-bold">PFTC</span>
+            <span className="text-xl font-bold"></span>
           </Link>
         </div>
       </div>
