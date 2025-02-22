@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+  const rpcUrl = process.env.MAINNET_RPC_URL;
   
   if (!rpcUrl) {
     return NextResponse.json(

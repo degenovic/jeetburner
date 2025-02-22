@@ -8,12 +8,12 @@ export async function GET(request: NextRequest) {
 
   if (!pubkey) {
     return NextResponse.json(
-      { error: 'Pubkey parameter is required' },
+      { error: 'No pubkey provided' },
       { status: 400 }
     );
   }
 
-  const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+  const rpcUrl = process.env.MAINNET_RPC_URL;
   if (!rpcUrl) {
     return NextResponse.json(
       { error: 'RPC URL not configured' },
@@ -24,14 +24,13 @@ export async function GET(request: NextRequest) {
   try {
     const connection = new Connection(rpcUrl, {
       commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000
     });
-    const publicKey = new PublicKey(pubkey);
 
     const accounts = await connection.getParsedTokenAccountsByOwner(
-      publicKey,
-      { programId: TOKEN_PROGRAM_ID },
-      'confirmed'
+      new PublicKey(pubkey),
+      {
+        programId: TOKEN_PROGRAM_ID,
+      }
     );
 
     return NextResponse.json({ accounts: accounts.value });

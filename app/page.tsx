@@ -46,7 +46,7 @@ function HomeContent() {
   }, []);
 
   const connection = useMemo(() => {
-    const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+    const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
     if (!rpcUrl) {
       console.error('RPC URL not configured');
       return new Connection('https://api.mainnet-beta.solana.com');
