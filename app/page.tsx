@@ -255,8 +255,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col items-center gap-8">
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col items-center gap-12">
           <div className="flex items-center gap-4">
             <div suppressHydrationWarning>
               <WalletMultiButton />
@@ -376,6 +376,105 @@ export default function Home() {
                   </div>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-24 max-w-4xl mx-auto">
+          <h2 className="text-4xl font-bold mb-12 text-center bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+            🔥 Degen's Guide to Rent Recovery 🔥
+          </h2>
+          
+          <div className="space-y-8">
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">🤔 Wen free SOL?</h3>
+              <p className="text-gray-300 space-y-4">
+                Fam, if you've been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain't much, but it's honest work! 
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">💸 How much SOL we talking about?</h3>
+              <p className="text-gray-300 space-y-4">
+                Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
+                If you're a true degen who's been farming every token under the Solana sun, you might have dozens 
+                of these collecting dust. WAGMI! 
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">🔍 How do I find my rekt accounts?</h3>
+              <p className="text-gray-300">
+                Just connect your wallet or paste any wallet address above. We'll scan for token accounts that:
+              </p>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">1.</span>
+                  <span>Have 0 tokens left (you paper-handed everything)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">2.</span>
+                  <span>Still have that sweet rent SOL locked up</span>
+                </div>
+              </div>
+              <p className="text-gray-300 mt-4">
+                No cap, it's that simple!
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">🔥 What happens when I burn them?</h3>
+              <p className="text-gray-300">
+                When you burn (close) an empty token account:
+              </p>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">1.</span>
+                  <span>The rent SOL gets sent back to your wallet</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">2.</span>
+                  <span>The token account gets nuked (but don't worry, you can always make a new one)</span>
+                </div>
+              </div>
+              <p className="text-gray-300 mt-4">
+                It's basically like getting an airdrop for being messy with your token accounts. Based!
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">🤝 Is this safe, ser?</h3>
+              <p className="text-gray-300 space-y-4">
+                Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
+                The code is open source, and we're just using standard Solana instructions. DYOR but this is literally 
+                free money you left on the table!
+              </p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
+              <h3 className="text-2xl font-bold mb-4">🚀 Any alpha leaks?</h3>
+              <p className="text-gray-300">
+                Here's some galaxy brain moves:
+              </p>
+              <div className="mt-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">1.</span>
+                  <span>Check your old wallets - your paper hand history might pay off</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">2.</span>
+                  <span>Look up your friends' addresses - flex on them with their unclaimed SOL</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-pink-400">3.</span>
+                  <span>Make it a habit to clean up after rugging yourself</span>
+                </div>
+              </div>
+              <p className="text-gray-300 mt-4">
+                Remember: even 0.002 SOL might be worth a lot when SOL hits $1000! NFA IYKYK 🤫
+              </p>
             </div>
           </div>
         </div>
