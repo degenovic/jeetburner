@@ -45,98 +45,46 @@ function HomeContent() {
     });
   }, []);
 
-  const fetchAccountsForKey = useCallback(async (targetKey: PublicKey) => {
-    if (!connection) return;
-    
-    setLoading(true);
-    setAccounts([]);
-    
+  const fetchAccounts = useCallback(async (key: PublicKey) => {
     try {
-      const { blockhash } = await connection.getLatestBlockhash();
-      console.log('Connected successfully! Latest blockhash:', blockhash);
+      setLoading(true);
+      setSearchError('');
       
-      console.log('Fetching token accounts for wallet:', targetKey.toString());
+      const response = await fetch(`/api/accounts?pubkey=${key.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch accounts');
+      }
       
-      // Get minimum rent-exempt balance once
-      const rentExemptBalance = await connection.getMinimumBalanceForRentExemption(0);
-      console.log('Minimum rent-exempt balance:', rentExemptBalance / LAMPORTS_PER_SOL, 'SOL');
+      const data = await response.json();
+      const accounts = data.accounts;
       
-      const response = await connection.getParsedTokenAccountsByOwner(
-        targetKey,
-        { programId: TOKEN_PROGRAM_ID },
-        'confirmed'
-      );
-
-      console.log('Total token accounts found:', response.value.length);
+      console.log('Total token accounts found:', accounts.length);
       
-      // Log all accounts for debugging without async operations
-      response.value.forEach((item, index) => {
-        const { pubkey, account } = item;
-        const info = account.data.parsed.info;
-        console.log(`Account ${index + 1}:`, {
-          pubkey: pubkey.toString(),
-          mint: info.mint,
-          owner: info.owner,
-          tokenAmount: info.tokenAmount,
-          lamports: account.lamports / LAMPORTS_PER_SOL + ' SOL',
-          isRentExempt: account.lamports >= rentExemptBalance ? 'Yes' : 'No'
-        });
-      });
-
-      const emptyAccounts: TokenAccount[] = response.value
-        .filter(({ account }) => {
-          const parsedInfo = account.data.parsed.info;
-          const tokenAmount = parsedInfo.tokenAmount;
-          const hasZeroTokens = tokenAmount.uiAmount === 0 && tokenAmount.amount === "0";
-          const hasRentExemptBalance = account.lamports >= rentExemptBalance;
-          
-          // Log filtering details
-          console.log('Checking account:', {
-            mint: parsedInfo.mint,
-            uiAmount: tokenAmount.uiAmount,
-            amount: tokenAmount.amount,
-            lamports: account.lamports / LAMPORTS_PER_SOL + ' SOL',
-            hasZeroTokens,
-            hasRentExemptBalance,
-            rentExemptBalance: rentExemptBalance / LAMPORTS_PER_SOL + ' SOL'
-          });
-          
-          return hasZeroTokens && hasRentExemptBalance;
+      const emptyAccounts = accounts
+        .filter((account: any) => {
+          const parsedInfo = account.account.data.parsed.info;
+          return parsedInfo.tokenAmount.uiAmount === 0;
         })
-        .map(({ pubkey, account }) => ({
-          pubkey: new PublicKey(pubkey),
-          lamports: account.lamports,
-          mint: account.data.parsed.info.mint,
-          name: account.data.parsed.info.mint || 'Unknown Token',
-          symbol: 'EMPTY'
+        .map((account: any) => ({
+          pubkey: new PublicKey(account.pubkey),
+          mint: account.account.data.parsed.info.mint,
+          name: account.account.data.parsed.info.tokenAmount.currency?.name || 'Unknown',
+          symbol: account.account.data.parsed.info.tokenAmount.currency?.symbol || 'Unknown',
+          lamports: account.account.lamports,
         }));
 
       console.log('Empty accounts found:', emptyAccounts.length);
-      console.log('Empty accounts details:', 
-        emptyAccounts.map(acc => ({
-          ...acc,
-          lamports: acc.lamports / LAMPORTS_PER_SOL + ' SOL'
-        }))
-      );
+      console.log('Empty accounts details:', emptyAccounts);
       
       setAccounts(emptyAccounts);
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error fetching accounts:', error);
-      
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          name: error.name,
-          stack: error.stack
-        });
-        toast.error(`Failed to fetch accounts: ${error.message}`);
-      } else {
-        toast.error('Failed to fetch accounts. Please try again.');
-      }
+      setSearchError('Failed to fetch accounts. Please try again.');
+      toast.error('Failed to fetch accounts');
     } finally {
       setLoading(false);
     }
-  }, [connection]);
+  }, []);
 
   // Auto-search from URL parameter
   useEffect(() => {
@@ -161,7 +109,7 @@ function HomeContent() {
       setSearchError('');
       setSearchedPubkey(pubKey);
       setClaimError(null);
-      fetchAccountsForKey(pubKey);
+      fetchAccounts(pubKey);
     } catch (error) {
       setSearchError('Invalid public key');
       console.error('Search error:', error);
@@ -171,9 +119,9 @@ function HomeContent() {
   // Fetch accounts when wallet is connected
   useEffect(() => {
     if (connected && publicKey) {
-      fetchAccountsForKey(publicKey);
+      fetchAccounts(publicKey);
     }
-  }, [connected, publicKey, fetchAccountsForKey]);
+  }, [connected, publicKey, fetchAccounts]);
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
     if (!publicKey || !signTransaction) return;
@@ -211,7 +159,7 @@ function HomeContent() {
       
       toast.success(`Successfully closed account and reclaimed ${(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
       
-      fetchAccountsForKey(publicKey);
+      fetchAccounts(publicKey);
       
     } catch (error: unknown) {
       console.error('Error burning account:', error);
@@ -222,7 +170,7 @@ function HomeContent() {
         toast.error('Failed to close account. Please try again.');
       }
     }
-  }, [publicKey, signTransaction, connection, fetchAccountsForKey]);
+  }, [publicKey, signTransaction, connection, fetchAccounts]);
 
   const checkWalletOwnership = () => {
     if (!publicKey || !searchedPubkey) return false;
@@ -264,7 +212,7 @@ function HomeContent() {
 
       toast.success(`Successfully burned ${selectedAccountsList.length} accounts`);
       setSelectedAccounts(new Set());
-      fetchAccountsForKey(publicKey);
+      fetchAccounts(publicKey);
     } catch (error: unknown) {
       console.error('Error burning accounts:', error);
       
