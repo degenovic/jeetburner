@@ -548,7 +548,7 @@ function HomeContent() {
           <div className="text-gray-400 flex items-center gap-2">
             Powered by
             <a 
-              href="https://helius.dev" 
+              href="https://www.helius.dev/solana-rpc-nodes" 
               target="_blank" 
               rel="noopener noreferrer" 
               className="flex items-center hover:text-white transition-colors"
