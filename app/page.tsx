@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast';
 import Header from './components/Header';
 import { Footer } from './components/Footer';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -20,7 +21,7 @@ interface TokenAccount {
 
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const { publicKey, signTransaction, connected } = useWallet();
   const [accounts, setAccounts] = useState<TokenAccount[]>([]);
@@ -558,5 +559,13 @@ export default function Home() {
       </div>
       <Footer />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
