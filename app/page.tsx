@@ -46,8 +46,12 @@ function HomeContent() {
   }, []);
 
   const connection = useMemo(() => {
-    // Use public mainnet endpoint for client-side
-    return new Connection('https://api.mainnet-beta.solana.com', {
+    const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+    if (!rpcUrl) {
+      console.error('RPC URL not configured');
+      return new Connection('https://api.mainnet-beta.solana.com');
+    }
+    return new Connection(rpcUrl, {
       commitment: 'confirmed',
       confirmTransactionInitialTimeout: 60000,
     });
@@ -221,57 +225,108 @@ function HomeContent() {
     }
   }, [publicKey, signTransaction, connection, fetchAccounts]);
 
-  const checkWalletOwnership = () => {
-    if (!publicKey || !searchedPubkey) return false;
-    return publicKey.toString() === searchedPubkey.toString();
-  };
-
-  const handleBurnAttempt = () => {
-    if (!checkWalletOwnership()) {
-      setClaimError("You are not connected to this wallet.");
+  const handleBurnSingle = useCallback(async (accountPubkey: PublicKey) => {
+    if (!publicKey || !signTransaction) {
+      toast.error('Please connect your wallet first');
       return;
     }
-    setClaimError(null);
-    burnSelected();
-  };
-
-  const burnSelected = async () => {
-    if (!publicKey || !signTransaction) return;
-
-    const selectedAccountsList = accounts.filter(acc => 
-      selectedAccounts.has(acc.pubkey.toString())
-    );
-
-    const transaction = new Transaction();
-    selectedAccountsList.forEach(account => {
-      transaction.add(
-        createCloseAccountInstruction(
-          account.pubkey,
-          publicKey,
-          publicKey,
-          []
-        )
-      );
-    });
 
     try {
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      
+      const instruction = createCloseAccountInstruction(
+        accountPubkey,
+        publicKey,  // Destination for reclaimed SOL
+        publicKey   // Owner of the account
+      );
+
+      const transaction = new Transaction().add(instruction);
+      transaction.recentBlockhash = blockhash;
+      transaction.lastValidBlockHeight = lastValidBlockHeight;
+      transaction.feePayer = publicKey;
+
+      // This will trigger wallet prompt
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
-      await connection.confirmTransaction(signature);
+      
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      });
+      
+      toast.success('Successfully claimed SOL!');
+      fetchAccounts(publicKey);
+    } catch (error) {
+      console.error('Claim error:', error);
+      toast.error('Failed to claim SOL');
+    }
+  }, [publicKey, signTransaction, connection, fetchAccounts]);
 
-      toast.success(`Successfully burned ${selectedAccountsList.length} accounts`);
+  const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
+    if (!publicKey || !signTransaction) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    try {
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      
+      const transactions = accountsToBurn.map(accountPubkey => {
+        const instruction = createCloseAccountInstruction(
+          new PublicKey(accountPubkey),
+          publicKey,
+          publicKey
+        );
+        
+        const tx = new Transaction().add(instruction);
+        tx.recentBlockhash = blockhash;
+        tx.lastValidBlockHeight = lastValidBlockHeight;
+        tx.feePayer = publicKey;
+        return tx;
+      });
+
+      // Sign all transactions at once
+      const signedTxs = await Promise.all(
+        transactions.map(tx => signTransaction(tx))
+      );
+
+      // Send all transactions
+      const signatures = await Promise.all(
+        signedTxs.map(signedTx => 
+          connection.sendRawTransaction(signedTx.serialize())
+        )
+      );
+
+      // Confirm all transactions
+      await Promise.all(
+        signatures.map(signature => 
+          connection.confirmTransaction({
+            signature,
+            blockhash,
+            lastValidBlockHeight
+          })
+        )
+      );
+      
+      toast.success(`Claimed ${accountsToBurn.length} accounts!`);
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
-    } catch (error: unknown) {
-      console.error('Error burning accounts:', error);
-      
-      if (error instanceof Error) {
-        toast.error(`Failed to burn selected accounts: ${error.message}`);
-      } else {
-        toast.error('Failed to burn selected accounts. Please try again.');
-      }
+    } catch (error) {
+      console.error('Bulk claim error:', error);
+      toast.error('Failed to claim accounts');
     }
-  };
+  }, [publicKey, signTransaction, connection, fetchAccounts]);
+
+  const handleBurnAttempt = useCallback(async () => {
+    if (!publicKey || !signTransaction) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    setClaimError(null);
+    handleBurnMultiple(Array.from(selectedAccounts));
+  }, [publicKey, signTransaction, selectedAccounts, handleBurnMultiple]);
 
   if (!mounted) {
     return null;
@@ -374,7 +429,7 @@ function HomeContent() {
                   </p>
                   {accounts.length > 0 && connected && (
                     <button
-                      onClick={handleBurnAttempt}
+                      onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
                       className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                     >
                       Claim All
@@ -437,10 +492,10 @@ function HomeContent() {
                           </p>
                           {connected && (
                             <button
-                              onClick={() => burnAccount(account)}
+                              onClick={() => handleBurnSingle(account.pubkey)}
                               className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
                             >
-                              Burn
+                              Claim
                             </button>
                           )}
                         </div>
@@ -477,7 +532,7 @@ function HomeContent() {
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
                   <a 
-                    href="https://spl_governance.crsp.solutions" 
+                    href="https://solana.com/docs/core/accounts#rent" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-pink-400 hover:text-pink-300 underline"
