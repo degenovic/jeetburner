@@ -1,507 +1,357 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
-import { Button, Checkbox } from '@nextui-org/react'
-import { createV1, updateV1, fetchMetadataFromSeeds, TokenStandard, mintV1 } from '@metaplex-foundation/mpl-token-metadata'
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata'
-import { generateSigner, percentAmount } from '@metaplex-foundation/umi'
-import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { clusterApiUrl, Connection, PublicKey, Transaction } from '@solana/web3.js'
-import { TOKEN_PROGRAM_ID, createSetAuthorityInstruction, AuthorityType } from '@solana/spl-token'
-import Header from './components/Header'
-import { Footer } from './components/Footer'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
+import { createCloseAccountInstruction } from '@solana/spl-token';
+import { toast } from 'react-hot-toast';
+import Header from './components/Header';
+import { Footer } from './components/Footer';
 
-interface TokenAttribute {
-  trait_type: string;
-  value: string | number;
-}
-
-interface TokenProperties {
-  files: Array<{ uri: string; type: string }>;
-  category: string;
-  website?: string;
-  twitter?: string;
-  telegram?: string;
-  discord?: string;
-}
-
-interface TokenMetadata {
+interface TokenAccount {
+  pubkey: PublicKey;
+  mint: string;
   name: string;
   symbol: string;
-  description: string;
-  image: string;
-  attributes: TokenAttribute[];
-  properties: TokenProperties;
+  lamports: number;
 }
 
-interface TokenAuthorities {
-  revokeMint: boolean;
-  revokeFreeze: boolean;
-  revokeUpdate: boolean;
-}
-
-interface TokenConfig {
-  supply: string;
-  decimals: string;
-}
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 
 export default function Home() {
-  const { wallet, publicKey } = useWallet()
-  const [selectedTab, setSelectedTab] = useState('basic')
-  const [isLoading, setIsLoading] = useState(false)
+  const { publicKey, signTransaction, connected } = useWallet();
+  const [accounts, setAccounts] = useState<TokenAccount[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [network, setNetwork] = useState<'mainnet-beta' | 'devnet'>('devnet');
+  const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
+  const [mounted, setMounted] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 2000;
 
-  // Token Metadata
-  const [metadata, setMetadata] = useState<TokenMetadata>({
-    name: '',
-    symbol: '',
-    description: '',
-    image: '',
-    attributes: [],
-    properties: {
-      files: [],
-      category: 'image',
-    },
-  })
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  // Token Configuration
-  const [config, setConfig] = useState<TokenConfig>({
-    supply: '',
-    decimals: '9',
-  })
+  if (!process.env.NEXT_PUBLIC_DEVNET_RPC_URL || !process.env.NEXT_PUBLIC_MAINNET_RPC_URL) {
+    console.error('Missing RPC URLs in environment variables');
+  }
 
-  // Token Authorities
-  const [authorities, setAuthorities] = useState<TokenAuthorities>({
-    revokeMint: false,
-    revokeFreeze: false,
-    revokeUpdate: false,
-  })
+  const RPC_URLS = {
+    'devnet': process.env.NEXT_PUBLIC_DEVNET_RPC_URL,
+    'mainnet-beta': process.env.NEXT_PUBLIC_MAINNET_RPC_URL
+  };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setMetadata(prev => ({ ...prev, image: reader.result as string }))
+  const connection = useMemo(() => {
+    const endpoint = RPC_URLS[network];
+    
+    if (!endpoint) {
+      toast.error(`No RPC URL configured for ${network}. Please check your environment variables.`);
+      return null;
+    }
+    
+    console.log('Using Helius RPC endpoint for', network);
+    
+    return new Connection(endpoint, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000,
+      wsEndpoint: undefined,
+      fetch: (url, options) => {
+        const headers = {
+          ...options?.headers,
+          'Content-Type': 'application/json',
+        };
+        
+        // Helius specific configuration
+        return fetch(url, {
+          ...options,
+          headers,
+          cache: 'no-store', // Ensure fresh data
+          method: 'POST',    // Helius prefers POST
+        });
       }
-      reader.readAsDataURL(file)
-    }
-  }
+    });
+  }, [network]);
 
-  const updateMetadata = (key: keyof TokenMetadata | keyof TokenProperties, value: string) => {
-    if (key in metadata) {
-      setMetadata(prev => ({ ...prev, [key]: value }))
-    } else {
-      setMetadata(prev => ({
-        ...prev,
-        properties: {
-          ...prev.properties,
-          [key]: value
-        }
-      }))
-    }
-  }
-
-  const updateAuthorities = (key: keyof TokenAuthorities, value: boolean) => {
-    switch(key) {
-      case 'revokeMint':
-      case 'revokeFreeze':
-      case 'revokeUpdate':
-        setAuthorities(prev => ({ ...prev, [key]: value }));
-        break;
-      default:
-        break;
-    }
-  }
-
-  const handleCreateToken = async () => {
-    if (!publicKey || !wallet?.adapter || !wallet.adapter.publicKey) {
-      alert('Please connect your wallet first')
-      return
-    }
-
-    // Validate input data
-    if (!metadata.name || !metadata.symbol || !config.decimals) {
-      alert('Please fill in all required fields')
-      return
-    }
-
-    // Validate lengths
-    if (metadata.name.length > 32) {
-      alert('Token name must be 32 characters or less')
-      return
-    }
-    if (metadata.symbol.length > 10) {
-      alert('Token symbol must be 10 characters or less')
-      return
-    }
-
+  const fetchAccounts = useCallback(async () => {
+    if (!publicKey) return;
+    
     try {
-      setIsLoading(true);
-
-      // Initialize umi with wallet adapter
-      const endpoint = clusterApiUrl('devnet');
-      const umi = createUmi(endpoint)
-        .use(mplTokenMetadata())
-        .use(walletAdapterIdentity(wallet.adapter));
-
-      const mint = generateSigner(umi);
-
-      // Function to retry failed transactions
-      const retryTransaction = async <T,>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
-        for (let i = 0; i < maxRetries; i++) {
-          try {
-            return await fn();
-          } catch (error) {
-            if (i === maxRetries - 1) throw error;
-            if (error instanceof Error && error.message?.includes('Blockhash not found')) {
-              console.log(`Retrying transaction... Attempt ${i + 2}/${maxRetries}`);
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              continue;
-            }
-            throw error;
-          }
-        }
-        throw new Error('Max retries reached');
-      };
-
-      // Create token with retry mechanism
-      await retryTransaction(async () => {
-        // Create the token
-        await createV1(umi, {
-          mint,
-          authority: umi.identity,
-          name: metadata.name,
-          symbol: metadata.symbol,
-          uri: '', // We'll add metadata JSON support later
-          sellerFeeBasisPoints: percentAmount(0),
-          tokenStandard: TokenStandard.Fungible,
-          decimals: Number(config.decimals),
-          updateAuthority: umi.identity,
-        }).sendAndConfirm(umi);
-
-        // Mint initial supply
-        const supply = BigInt(Number(config.supply) * (10 ** Number(config.decimals)));
-        await mintV1(umi, {
-          mint: mint.publicKey,
-          authority: umi.identity,
-          amount: supply,
-          tokenOwner: umi.identity.publicKey,
-          tokenStandard: TokenStandard.Fungible,
-        }).sendAndConfirm(umi);
-
-        // Revoke authorities if requested
-        if (authorities.revokeMint || authorities.revokeFreeze) {
-          const connection = new Connection(endpoint);
+      setLoading(true);
+      console.log('Fetching accounts for:', publicKey.toString());
+      
+      // First verify the connection
+      try {
+        const version = await connection.getVersion();
+        console.log('Connected to Solana node version:', version);
+      } catch (error) {
+        console.error('Failed to connect to RPC:', error);
+        toast.error('Failed to connect to Solana network. Please try again.');
+        return;
+      }
+      
+      // Then fetch the accounts
+      const response = await connection.getParsedTokenAccountsByOwner(
+        publicKey,
+        { programId: TOKEN_PROGRAM_ID },
+        'confirmed'
+      );
+      
+      console.log('Raw response:', response);
+      
+      // Filter for accounts that have 0 token balance but still have rent-exempt SOL
+      const emptyAccounts = response.value.filter(item => {
+        try {
+          const tokenAmount = item.account.data.parsed.info.tokenAmount;
+          const hasZeroBalance = tokenAmount.amount === '0';
+          const hasSol = item.account.lamports > 0;
           
-          if (authorities.revokeMint) {
-            const ix = createSetAuthorityInstruction(
-              new PublicKey(mint.publicKey),
-              new PublicKey(umi.identity.publicKey),
-              AuthorityType.MintTokens,
-              null,
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            
-            const { blockhash } = await connection.getLatestBlockhash();
-            const transaction = new Transaction();
-            transaction.add(ix);
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            await wallet.adapter.sendTransaction(transaction, connection);
-          }
-
-          if (authorities.revokeFreeze) {
-            const ix = createSetAuthorityInstruction(
-              new PublicKey(mint.publicKey),
-              new PublicKey(umi.identity.publicKey),
-              AuthorityType.FreezeAccount,
-              null,
-              [],
-              TOKEN_PROGRAM_ID
-            );
-            
-            const { blockhash } = await connection.getLatestBlockhash();
-            const transaction = new Transaction();
-            transaction.add(ix);
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = new PublicKey(umi.identity.publicKey);
-            
-            await wallet.adapter.sendTransaction(transaction, connection);
-          }
-        }
-
-        // Revoke update authority if requested
-        if (authorities.revokeUpdate) {
-          console.log('Revoking update authority...');
-          const initialMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
-          console.log('Initial metadata:', initialMetadata);
+          console.log('Account:', {
+            pubkey: item.pubkey.toString(),
+            lamports: item.account.lamports,
+            balance: tokenAmount.amount,
+            hasZeroBalance,
+            hasSol
+          });
           
-          // Make a copy of the metadata and set isMutable to false
-          const updatedMetadata = {
-            ...initialMetadata,
-            isMutable: false,
-            updateAuthority: null, // Set update authority to null
-          };
-          console.log('Updated metadata:', updatedMetadata);
-
-          await updateV1(umi, {
-            mint: mint.publicKey,
-            authority: umi.identity,
-            data: updatedMetadata,
-            isMutable: false,
-          }).sendAndConfirm(umi);
-
-          // Verify the changes
-          const finalMetadata = await fetchMetadataFromSeeds(umi, { mint: mint.publicKey });
-          console.log('Final metadata:', finalMetadata);
+          return hasZeroBalance && hasSol;
+        } catch (error) {
+          console.error('Error processing account:', error);
+          return false;
         }
       });
 
-      alert('Token created successfully! Mint address: ' + mint.publicKey)
+      console.log('Empty accounts found:', emptyAccounts.length);
+      
+      const accountsWithInfo = emptyAccounts.map(item => ({
+        pubkey: new PublicKey(item.pubkey),
+        lamports: item.account.lamports,
+        mint: item.account.data.parsed.info.mint,
+        tokenAmount: item.account.data.parsed.info.tokenAmount,
+        name: 'Empty Token Account',
+        symbol: 'EMPTY'
+      }));
+
+      console.log('Parsed accounts:', accountsWithInfo);
+      setAccounts(accountsWithInfo);
+      setRetryCount(0);
+      
     } catch (error) {
-      console.error('Error creating token:', error)
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const userMessage = errorMessage.includes('Blockhash not found')
-        ? 'Network error: Please try again in a few moments.'
-        : `Error creating token: ${errorMessage}`;
-      alert(userMessage);
+      console.error('Error fetching accounts:', error);
+      
+      if (error.message.includes('429') && retryCount < MAX_RETRIES) {
+        const delay = RETRY_DELAY * Math.pow(2, retryCount);
+        toast.error(`Rate limited. Retrying in ${delay/1000} seconds...`);
+        setRetryCount(prev => prev + 1);
+        setTimeout(() => fetchAccounts(), delay);
+      } else {
+        toast.error('Failed to fetch accounts: ' + (error.message || 'Unknown error'));
+      }
     } finally {
-      setIsLoading(false)
+      setLoading(false);
     }
+  }, [publicKey, connection, retryCount]);
+
+  const burnAccount = useCallback(async (account: TokenAccount) => {
+    if (!publicKey || !signTransaction) return;
+    
+    try {
+      const transaction = new Transaction();
+      
+      // Create instruction to close the token account
+      const closeInstruction = createCloseAccountInstruction(
+        new PublicKey(account.pubkey), // Token account to close
+        publicKey,                      // Destination for rent SOL
+        publicKey,                      // Authority
+        []                             // No multisig
+      );
+      
+      transaction.add(closeInstruction);
+      
+      // Sign and send transaction
+      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
+      transaction.recentBlockhash = latestBlockhash.blockhash;
+      transaction.feePayer = publicKey;
+      
+      const signed = await signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signed.serialize());
+      
+      toast.loading('Closing account...');
+      
+      const confirmation = await connection.confirmTransaction({
+        signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      });
+      
+      if (confirmation.value.err) {
+        throw new Error('Failed to confirm transaction');
+      }
+      
+      toast.success(`Successfully closed account and reclaimed ${(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+      
+      // Refresh the accounts list
+      fetchAccounts();
+      
+    } catch (error) {
+      console.error('Error burning account:', error);
+      toast.error('Failed to close account: ' + error.message);
+    }
+  }, [publicKey, signTransaction, connection, fetchAccounts]);
+
+  const burnSelected = async () => {
+    if (!publicKey || !signTransaction) return;
+
+    const selectedAccountsList = accounts.filter(acc => 
+      selectedAccounts.has(acc.pubkey.toString())
+    );
+
+    const transaction = new Transaction();
+    selectedAccountsList.forEach(account => {
+      transaction.add(
+        createCloseAccountInstruction(
+          account.pubkey,
+          publicKey,
+          publicKey,
+          []
+        )
+      );
+    });
+
+    try {
+      const signedTx = await signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      await connection.confirmTransaction(signature);
+
+      toast.success(`Successfully burned ${selectedAccountsList.length} accounts`);
+      setSelectedAccounts(new Set());
+      fetchAccounts();
+    } catch (error) {
+      console.error('Error burning accounts:', error);
+      toast.error('Failed to burn selected accounts');
+    }
+  };
+
+  useEffect(() => {
+    if (connected && mounted) {
+      fetchAccounts();
+    }
+  }, [connected, fetchAccounts, mounted]);
+
+  const totalReclaimable = accounts.reduce((sum, acc) => sum + acc.lamports, 0);
+
+  if (!mounted) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col">
+    <main className="min-h-screen bg-black">
       <Header />
-
-      <main className="app flex-1 flex items-center justify-center">
-        <div className="w-full max-w-7xl px-4">
-          <div style={{ 
-            marginTop: '75px', 
-            marginBottom: '75px'
-          }}>
-            <div className="app-box">
-              <div className="app-tabs">
-                <button className="app-tab" data-selected={selectedTab === 'basic'} onClick={() => setSelectedTab('basic')}>Basic Info</button>
-                <button className="app-tab" data-selected={selectedTab === 'config'} onClick={() => setSelectedTab('config')}>Configuration</button>
-                <button className="app-tab" data-selected={selectedTab === 'links'} onClick={() => setSelectedTab('links')}>Social Links</button>
-                <button className="app-tab" data-selected={selectedTab === 'authorities'} onClick={() => setSelectedTab('authorities')}>Authorities</button>
-                <button className="app-tab" data-selected={selectedTab === 'liquidity'} onClick={() => setSelectedTab('liquidity')}>Liquidity</button>
-              </div>
-
-              <div className="app-content">
-                {selectedTab === 'basic' && (
-                  <div>
-                    <div className="mb-6">
-                      <label className="input-label">Token Name</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="Enter token name"
-                        value={metadata.name}
-                        onChange={(e) => updateMetadata('name', e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Token Symbol</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="Enter token symbol"
-                        value={metadata.symbol}
-                        onChange={(e) => updateMetadata('symbol', e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Description</label>
-                      <textarea
-                        className="input-field"
-                        placeholder="Enter token description"
-                        value={metadata.description}
-                        onChange={(e) => updateMetadata('description', e.target.value)}
-                        rows={4}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Token Logo</label>
-                      <input
-                        type="file"
-                        className="input-field"
-                        onChange={handleLogoUpload}
-                        accept="image/*"
-                      />
-                    </div>
-
-                    <Button
-                      color="primary"
-                      className="w-full"
-                      onClick={handleCreateToken}
-                      isLoading={isLoading}
-                      isDisabled={!publicKey || !metadata.name || !metadata.symbol || !config.supply}
-                    >
-                      Create Token
-                    </Button>
-                  </div>
-                )}
-                {selectedTab === 'config' && (
-                  <div>
-                    <div className="mb-6">
-                      <label className="input-label">Total Supply</label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        placeholder="Enter total supply"
-                        value={config.supply}
-                        onChange={(e) => setConfig(prev => ({ ...prev, supply: e.target.value }))}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Decimals</label>
-                      <input
-                        type="number"
-                        className="input-field"
-                        placeholder="Enter decimals"
-                        value={config.decimals}
-                        onChange={(e) => setConfig(prev => ({ ...prev, decimals: e.target.value }))}
-                      />
-                    </div>
-
-                    <Button
-                      color="primary"
-                      className="w-full"
-                      onClick={handleCreateToken}
-                      isLoading={isLoading}
-                      isDisabled={!publicKey || !metadata.name || !metadata.symbol || !config.supply}
-                    >
-                      Create Token
-                    </Button>
-                  </div>
-                )}
-                {selectedTab === 'links' && (
-                  <div>
-                    <div className="mb-6">
-                      <label className="input-label">Website</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="https://"
-                        value={metadata.properties.website || ''}
-                        onChange={(e) => updateMetadata('website', e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Twitter</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="@username"
-                        value={metadata.properties.twitter || ''}
-                        onChange={(e) => updateMetadata('twitter', e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Telegram</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="t.me/"
-                        value={metadata.properties.telegram || ''}
-                        onChange={(e) => updateMetadata('telegram', e.target.value)}
-                      />
-                    </div>
-
-                    <div className="mb-6">
-                      <label className="input-label">Discord</label>
-                      <input
-                        type="text"
-                        className="input-field"
-                        placeholder="discord.gg/"
-                        value={metadata.properties.discord || ''}
-                        onChange={(e) => updateMetadata('discord', e.target.value)}
-                      />
-                    </div>
-
-                    <Button
-                      color="primary"
-                      className="w-full"
-                      onClick={handleCreateToken}
-                      isLoading={isLoading}
-                      isDisabled={!publicKey || !metadata.name || !metadata.symbol || !config.supply}
-                    >
-                      Create Token
-                    </Button>
-                  </div>
-                )}
-                {selectedTab === 'authorities' && (
-                  <div>
-                    <div className="space-y-6">
-                      <Checkbox
-                        isSelected={authorities.revokeMint}
-                        onValueChange={(checked: boolean) => updateAuthorities('revokeMint', checked)}
-                      >
-                        Revoke Mint Authority (Permanently disable new token minting)
-                      </Checkbox>
-                      <div className="h-4"></div>
-                      <Checkbox
-                        isSelected={authorities.revokeFreeze}
-                        onValueChange={(checked: boolean) => updateAuthorities('revokeFreeze', checked)}
-                      >
-                        Revoke Freeze Authority (Permanently disable token freezing)
-                      </Checkbox>
-                      <div className="h-4"></div>
-                      <Checkbox
-                        isSelected={authorities.revokeUpdate}
-                        onValueChange={(checked: boolean) => updateAuthorities('revokeUpdate', checked)}
-                      >
-                        Revoke Update Authority (Permanently disable token metadata updates)
-                      </Checkbox>
-                      <div className="h-4"></div>
-                    </div>
-                    <div className="mt-6 p-4 bg-warning-50 rounded-lg">
-                      <p className="text-warning-700 text-sm">
-                        Warning: Revoking authorities is permanent and cannot be undone. Once revoked, these permissions cannot be restored.
-                      </p>
-                    </div>
-
-                    <Button
-                      color="primary"
-                      className="w-full"
-                      onClick={handleCreateToken}
-                      isLoading={isLoading}
-                      isDisabled={!publicKey || !metadata.name || !metadata.symbol || !config.supply}
-                    >
-                      Create Token
-                    </Button>
-                  </div>
-                )}
-                {selectedTab === 'liquidity' && (
-                  <div className="text-center">
-                    <h3 className="text-xl font-semibold mb-4">Add Liquidity on Raydium</h3>
-                    <Button
-                      color="primary"
-                      onClick={() => window.open(`https://raydium.io/liquidity/create-pool`, '_blank')}
-                    >
-                      Add Liquidity on Raydium
-                    </Button>
-                  </div>
-                )}
-              </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center gap-8">
+          <div className="flex items-center gap-4">
+            <div suppressHydrationWarning>
+              <WalletMultiButton />
             </div>
+            <select
+              value={network}
+              onChange={(e) => setNetwork(e.target.value as 'mainnet-beta' | 'devnet')}
+              className="bg-gray-700 text-white rounded px-4 py-2"
+            >
+              <option value="devnet">Devnet</option>
+              <option value="mainnet-beta">Mainnet</option>
+            </select>
           </div>
-        </div>
-      </main>
 
+          {connected && (
+            <>
+              <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">Your Wallet</h2>
+                <p className="text-gray-400">{publicKey?.toString()}</p>
+              </div>
+
+              <div className="w-full max-w-4xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold">
+                    Rent-exempt Accounts ({accounts.length})
+                  </h3>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Total Reclaimable:</p>
+                    <p className="font-bold">{(totalReclaimable / LAMPORTS_PER_SOL).toFixed(4)} SOL</p>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div className="text-center py-8">Loading accounts...</div>
+                ) : (
+                  <>
+                    {accounts.length > 0 && (
+                      <div className="mb-4">
+                        <button
+                          onClick={burnSelected}
+                          disabled={selectedAccounts.size === 0}
+                          className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                        >
+                          Burn Selected ({selectedAccounts.size})
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="bg-gray-800 rounded-lg overflow-hidden">
+                      {accounts.map((account) => (
+                        <div
+                          key={account.pubkey.toString()}
+                          className="border-b border-gray-700 p-4 flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedAccounts.has(account.pubkey.toString())}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedAccounts);
+                                if (e.target.checked) {
+                                  newSelected.add(account.pubkey.toString());
+                                } else {
+                                  newSelected.delete(account.pubkey.toString());
+                                }
+                                setSelectedAccounts(newSelected);
+                              }}
+                              className="w-4 h-4"
+                            />
+                            <div>
+                              <p className="font-medium">{account.name} ({account.symbol})</p>
+                              <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <p className="font-medium">
+                              {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                            </p>
+                            <button
+                              onClick={() => burnAccount(account)}
+                              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
+                            >
+                              Burn
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {accounts.length === 0 && (
+                        <div className="p-8 text-center text-gray-400">
+                          No rent-exempt accounts found
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
       <Footer />
-    </div>
-  )
+    </main>
+  );
 }
