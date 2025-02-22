@@ -4,8 +4,9 @@ interface Props {
   params: {
     pubkey: string;
   };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export default function PubkeyPage({ params }: Props) {
+export default async function PubkeyPage({ params }: Props) {
   redirect(`/?pubkey=${params.pubkey}`);
 }
