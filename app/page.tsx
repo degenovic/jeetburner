@@ -674,6 +674,28 @@ function HomeContent() {
           <div style={{ marginBottom: '25px' }} />
         </div>
         <Footer />
+        <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
+          <div className="max-w-2xl">
+            <p className="mb-4 text-center mx-auto">
+              This tool allows you to close empty token accounts and reclaim SOL. Please verify all transactions before signing. 
+              All actions are performed at your own risk. No financial advice is provided.
+            </p>
+
+            <p className="mb-4 text-center mx-auto">
+              This is a new domain that may show security warnings in some wallets. The tool is open source and only interacts 
+              with the Solana blockchain to close empty token accounts.
+            </p>
+
+            <div className="text-xs text-gray-500 text-center mx-auto">
+              <a href="https://github.com/yourusername/pftc" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                View on GitHub
+              </a>
+              <span className="mx-2">•</span>
+              Last updated: {new Date().toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+        <div className="mb-6" />
       </div>
     </main>
   );

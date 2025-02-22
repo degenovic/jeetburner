@@ -7,8 +7,22 @@ import { Toaster } from 'react-hot-toast'
 const jetbrains = JetBrains_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'CoinBakery | Token Account Cleanup',
-  description: 'Clean up your Solana wallet by burning empty token accounts and reclaiming SOL.',
+  title: 'Pump Token Finder & Claimer',
+  description: 'Find and claim empty token accounts on Solana to recover SOL. A tool to help you manage your Solana wallet and reclaim rent from unused token accounts.',
+  keywords: 'Solana, Token, Wallet, SOL, Rent, Recovery, Blockchain, Cryptocurrency',
+  openGraph: {
+    title: 'Pump Token Finder & Claimer',
+    description: 'Find and claim empty token accounts on Solana to recover SOL',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Pump Token Finder & Claimer',
+    description: 'Find and claim empty token accounts on Solana to recover SOL',
+  },
+  verification: {
+    google: 'verification_token',
+  },
   icons: {
     icon: '/favicon.ico',
   },
