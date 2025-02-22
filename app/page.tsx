@@ -176,6 +176,14 @@ function HomeContent() {
     }
   }, [connected]);
 
+  const getBlockhash = async () => {
+    const response = await fetch('/api/blockhash');
+    if (!response.ok) {
+      throw new Error('Failed to get blockhash');
+    }
+    return response.json();
+  };
+
   const burnAccount = useCallback(async (account: TokenAccount) => {
     if (!publicKey || !signTransaction) return;
     
@@ -191,8 +199,8 @@ function HomeContent() {
       
       transaction.add(closeInstruction);
       
-      const latestBlockhash = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = latestBlockhash.blockhash;
+      const { blockhash, lastValidBlockHeight } = await getBlockhash();
+      transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
       const signed = await signTransaction(transaction);
@@ -202,8 +210,8 @@ function HomeContent() {
       
       const confirmation = await connection.confirmTransaction({
         signature,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+        blockhash,
+        lastValidBlockHeight
       });
       
       if (confirmation.value.err) {
@@ -232,7 +240,7 @@ function HomeContent() {
     }
 
     try {
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
       const instruction = createCloseAccountInstruction(
         accountPubkey,
@@ -270,7 +278,7 @@ function HomeContent() {
     }
 
     try {
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+      const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
       const transactions = accountsToBurn.map(accountPubkey => {
         const instruction = createCloseAccountInstruction(
