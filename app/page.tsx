@@ -40,12 +40,20 @@ function HomeContent() {
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
   const [searchedPubkey, setSearchedPubkey] = useState<PublicKey | null>(null);
+  const [isViewingConnectedWallet, setIsViewingConnectedWallet] = useState(true);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (publicKey && !hasSearched) {
+      setSearchedPubkey(publicKey);
+      setIsViewingConnectedWallet(true);
+    }
+  }, [publicKey, hasSearched]);
 
   const connection = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
@@ -139,6 +147,27 @@ function HomeContent() {
     }
   }, []);
 
+  const handleSearch = async (key?: string) => {
+    const searchValue = key || searchKey;
+    if (!searchValue) {
+      setSearchError('Please enter a public key');
+      return;
+    }
+
+    try {
+      const pubkey = new PublicKey(searchValue);
+      setSearchError('');
+      setSearchedPubkey(pubkey);
+      setIsViewingConnectedWallet(publicKey ? pubkey.equals(publicKey) : false);
+      setClaimError(null);
+      setHasSearched(true);
+      fetchAccounts(pubkey);
+    } catch (error) {
+      setSearchError('Invalid public key');
+      console.error('Search error:', error);
+    }
+  };
+
   // Auto-search from URL parameter
   useEffect(() => {
     if (!mounted) return;
@@ -149,25 +178,6 @@ function HomeContent() {
       handleSearch(pubkeyParam);
     }
   }, [mounted, searchParams]);
-
-  const handleSearch = async (key?: string) => {
-    const searchValue = key || searchKey;
-    if (!searchValue) {
-      setSearchError('Please enter a public key');
-      return;
-    }
-
-    try {
-      const pubKey = new PublicKey(searchValue);
-      setSearchError('');
-      setSearchedPubkey(pubKey);
-      setClaimError(null);
-      fetchAccounts(pubKey);
-    } catch (error) {
-      setSearchError('Invalid public key');
-      console.error('Search error:', error);
-    }
-  };
 
   // Fetch accounts when wallet is connected
   useEffect(() => {
@@ -440,7 +450,7 @@ function HomeContent() {
                   <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
                     {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
                   </p>
-                  {accounts.length > 0 && connected && (
+                  {accounts.length > 0 && connected && isViewingConnectedWallet && (
                     <button
                       onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
                       className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
@@ -459,7 +469,7 @@ function HomeContent() {
                 <div className="text-center py-8">Loading accounts...</div>
               ) : (
                 <>
-                  {accounts.length > 0 && connected && (
+                  {accounts.length > 0 && connected && isViewingConnectedWallet && (
                     <div className="mb-4">
                       <button
                         onClick={handleBurnAttempt}
@@ -478,18 +488,20 @@ function HomeContent() {
                         className="flex items-center justify-between gap-4 p-4 border rounded-lg border-gray-800 bg-gray-900"
                       >
                         <div className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={selectedAccounts.has(account.pubkey.toString())}
-                            onChange={(e) => {
-                              const newSelected = new Set(selectedAccounts);
-                              e.target.checked 
-                                ? newSelected.add(account.pubkey.toString())
-                                : newSelected.delete(account.pubkey.toString());
-                              setSelectedAccounts(newSelected);
-                            }}
-                            className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
-                          />
+                          {isViewingConnectedWallet && connected && (
+                            <input
+                              type="checkbox"
+                              checked={selectedAccounts.has(account.pubkey.toString())}
+                              onChange={(e) => {
+                                const newSelected = new Set(selectedAccounts);
+                                e.target.checked
+                                  ? newSelected.add(account.pubkey.toString())
+                                  : newSelected.delete(account.pubkey.toString());
+                                setSelectedAccounts(newSelected);
+                              }}
+                              className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                            />
+                          )}
                           {account.image && (
                             <img 
                               src={account.image}
@@ -509,17 +521,19 @@ function HomeContent() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-4">
                           <div className="text-sm text-gray-400">
                             {toSol(account.lamports).toFixed(4)} SOL
                           </div>
-                          <button
-                            onClick={() => handleBurnSingle(account.pubkey)}
-                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={!connected || loading}
-                          >
-                            {loading ? 'Claiming...' : 'Claim'}
-                          </button>
+                          {isViewingConnectedWallet && connected && (
+                            <button
+                              onClick={() => handleBurnSingle(account.pubkey)}
+                              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {loading ? 'Claiming...' : 'Claim'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
