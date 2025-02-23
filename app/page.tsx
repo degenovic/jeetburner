@@ -280,44 +280,33 @@ function HomeContent() {
     try {
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
-      const transactions = accountsToBurn.map(accountPubkey => {
-        const instruction = createCloseAccountInstruction(
+      // Create instructions for all accounts
+      const instructions = accountsToBurn.map(accountPubkey => 
+        createCloseAccountInstruction(
           new PublicKey(accountPubkey),
           publicKey,
           publicKey
-        );
-        
-        const tx = new Transaction().add(instruction);
-        tx.recentBlockhash = blockhash;
-        tx.lastValidBlockHeight = lastValidBlockHeight;
-        tx.feePayer = publicKey;
-        return tx;
-      });
-
-      // Sign all transactions at once
-      const signedTxs = await Promise.all(
-        transactions.map(tx => signTransaction(tx))
-      );
-
-      // Send all transactions
-      const signatures = await Promise.all(
-        signedTxs.map(signedTx => 
-          connection.sendRawTransaction(signedTx.serialize())
         )
       );
 
-      // Confirm all transactions
-      await Promise.all(
-        signatures.map(signature => 
-          connection.confirmTransaction({
-            signature,
-            blockhash,
-            lastValidBlockHeight
-          })
-        )
-      );
+      // Create single transaction with all instructions
+      const transaction = new Transaction().add(...instructions);
+      transaction.recentBlockhash = blockhash;
+      transaction.lastValidBlockHeight = lastValidBlockHeight;
+      transaction.feePayer = publicKey;
+
+      // Sign and send
+      const signedTx = await signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signedTx.serialize());
       
-      toast.success(`Claimed ${accountsToBurn.length} accounts!`);
+      // Confirm transaction
+      await connection.confirmTransaction({
+        signature,
+        blockhash,
+        lastValidBlockHeight
+      });
+      
+      toast.success(`Successfully claimed ${accountsToBurn.length} accounts!`);
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
