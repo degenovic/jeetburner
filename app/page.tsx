@@ -18,12 +18,14 @@ interface TokenAccount {
   name: string;
   symbol: string;
   lamports: number;
+  image?: string | null;
 }
 
 interface TokenMetadata {
   mint: string;
   name: string;
   symbol: string;
+  image?: string | null;
 }
 
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -84,6 +86,7 @@ function HomeContent() {
           name: 'Loading...',
           symbol: '...',
           lamports: account.account.lamports,
+          image: undefined
         }));
 
       if (emptyAccounts.length > 0) {
@@ -100,22 +103,37 @@ function HomeContent() {
           console.log('Metadata response:', metadata);
           
           // Update accounts with metadata
-          emptyAccounts.forEach((account: TokenAccount) => {
-            const tokenMetadata = metadata.find(m => m.mint === account.mint);
-            if (tokenMetadata) {
-              account.name = tokenMetadata.name || 'Unknown';
-              account.symbol = tokenMetadata.symbol || '???';
-            } else {
-              account.name = 'Unknown';
-              account.symbol = '???';
+          const fetchMetadata = useCallback(async (accounts: TokenAccount[]) => {
+            if (accounts.length === 0) return;
+            
+            const mints = accounts.map(account => account.mint).join(',');
+            const response = await fetch(`/api/token-metadata?mints=${mints}`);
+            
+            if (!response.ok) {
+              console.error('Failed to fetch metadata');
+              return;
             }
-          });
+
+            const metadata = await response.json();
+            
+            setAccounts(prevAccounts => 
+              prevAccounts.map(account => ({
+                ...account,
+                name: metadata[account.mint]?.name || account.name || 'Unknown',
+                symbol: metadata[account.mint]?.symbol || account.symbol || '',
+                image: metadata[account.mint]?.image || undefined
+              }))
+            );
+          }, []);
+
+          fetchMetadata(emptyAccounts);
         } catch (error) {
           console.error('Error fetching token metadata:', error);
           // Don't fail the whole operation if metadata fetch fails
           emptyAccounts.forEach((account: TokenAccount) => {
             account.name = 'Unknown';
             account.symbol = '???';
+            account.image = undefined;
           });
         }
       }
@@ -485,8 +503,28 @@ function HomeContent() {
                             />
                           )}
                           <div>
-                            <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-gray-400">{truncateAddress(account.pubkey.toString(), 6, 6)}</p>
+                            <div className="flex items-center space-x-3">
+                              {account.image ? (
+                                <div className="relative w-8 h-8">
+                                  <img
+                                    src={account.image}
+                                    alt={account.name}
+                                    className="rounded-full object-cover w-8 h-8"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+                                    }}
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                                  <span className="text-xs">{account.symbol?.[0] || '?'}</span>
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium">{account.name || 'Unknown'}</p>
+                                <p className="text-sm text-gray-400">{truncateAddress(account.pubkey.toString(), 6, 6)}</p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -504,7 +542,6 @@ function HomeContent() {
                         </div>
                       </div>
                     ))}
-
                     {accounts.length === 0 && (
                       <div className="p-8 text-center text-gray-400">
                         No rent-exempt accounts found
