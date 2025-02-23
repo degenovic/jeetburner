@@ -325,6 +325,12 @@ function HomeContent() {
     handleBurnMultiple(Array.from(selectedAccounts));
   }, [publicKey, signTransaction, selectedAccounts, handleBurnMultiple]);
 
+  const truncateAddress = (address: string, startLength = 4, endLength = 4) => {
+    if (!address) return '';
+    if (address.length <= startLength + endLength) return address;
+    return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
+  };
+
   if (!mounted) {
     return null;
   }
@@ -406,7 +412,7 @@ function HomeContent() {
               {connected && publicKey && (
                 <div className="text-center mb-16">
                   <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
-                  <p className="text-gray-400">{publicKey.toString()}</p>
+                  <p className="text-gray-400">{truncateAddress(publicKey.toString(), 6, 6)}</p>
                 </div>
               )}
             </div>
@@ -480,7 +486,7 @@ function HomeContent() {
                           )}
                           <div>
                             <p className="font-medium">{account.name}</p>
-                            <p className="text-sm text-gray-400">{account.pubkey.toString()}</p>
+                            <p className="text-sm text-gray-400">{truncateAddress(account.pubkey.toString(), 6, 6)}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -529,7 +535,7 @@ function HomeContent() {
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
                   <a 
-                    href="https://solana.com/docs/core/accounts#rent" 
+                    href="https://spl_governance.crsp.dev multisig#rent" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-pink-400 hover:text-pink-300 underline"
