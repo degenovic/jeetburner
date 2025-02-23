@@ -356,7 +356,7 @@ function HomeContent() {
               Recover Your Rent SOL
             </h1>
             <p className="text-gray-300 text-2xl">
-              Find and close empty token accounts to get your rent back
+              Find and close empty token accounts to get some beer money
             </p>
             <div className="flex justify-center">
               <button 
@@ -466,7 +466,7 @@ function HomeContent() {
                         disabled={selectedAccounts.size === 0}
                         className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
                       >
-                        Burn Selected ({selectedAccounts.size})
+                        {loading ? 'Claiming...' : `Claim Selected (${selectedAccounts.size})`}
                       </button>
                     </div>
                   )}
@@ -506,12 +506,11 @@ function HomeContent() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-semibold">{account.name}</span>
-                              <span className="text-gray-400">[{account.symbol}]</span>
                             </div>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <div className="text-lg font-medium">
+                          <div className="text-sm text-gray-400">
                             {toSol(account.lamports).toFixed(4)} SOL
                           </div>
                           <button
@@ -519,7 +518,7 @@ function HomeContent() {
                             className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={!connected || loading}
                           >
-                            {loading ? 'Burning...' : 'Burn'}
+                            {loading ? 'Claiming...' : 'Claim'}
                           </button>
                         </div>
                       </div>
@@ -550,7 +549,7 @@ function HomeContent() {
                 </h3>
                 <p className="text-gray-300 space-y-4">
                   If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but it&apos;s honest work! 
+                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free beer money! 
                 </p>
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
