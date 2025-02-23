@@ -18,14 +18,14 @@ interface TokenAccount {
   name: string;
   symbol: string;
   lamports: number;
-  image?: string | null;
+  image: string;
 }
 
 interface TokenMetadata {
   mint: string;
   name: string;
   symbol: string;
-  image?: string | null;
+  image: string;
 }
 
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
@@ -86,7 +86,7 @@ function HomeContent() {
           name: 'Loading...',
           symbol: '...',
           lamports: account.account.lamports,
-          image: undefined
+          image: '',
         }));
 
       if (emptyAccounts.length > 0) {
@@ -103,37 +103,25 @@ function HomeContent() {
           console.log('Metadata response:', metadata);
           
           // Update accounts with metadata
-          const fetchMetadata = useCallback(async (accounts: TokenAccount[]) => {
-            if (accounts.length === 0) return;
-            
-            const mints = accounts.map(account => account.mint).join(',');
-            const response = await fetch(`/api/token-metadata?mints=${mints}`);
-            
-            if (!response.ok) {
-              console.error('Failed to fetch metadata');
-              return;
+          emptyAccounts.forEach((account: TokenAccount) => {
+            const tokenMetadata = metadata.find(m => m.mint === account.mint);
+            if (tokenMetadata) {
+              account.name = tokenMetadata.name || 'Unknown';
+              account.symbol = tokenMetadata.symbol || '???';
+              account.image = tokenMetadata.image || '';
+            } else {
+              account.name = 'Unknown';
+              account.symbol = '???';
+              account.image = '';
             }
-
-            const metadata = await response.json();
-            
-            setAccounts(prevAccounts => 
-              prevAccounts.map(account => ({
-                ...account,
-                name: metadata[account.mint]?.name || account.name || 'Unknown',
-                symbol: metadata[account.mint]?.symbol || account.symbol || '',
-                image: metadata[account.mint]?.image || undefined
-              }))
-            );
-          }, []);
-
-          fetchMetadata(emptyAccounts);
+          });
         } catch (error) {
           console.error('Error fetching token metadata:', error);
           // Don't fail the whole operation if metadata fetch fails
           emptyAccounts.forEach((account: TokenAccount) => {
             account.name = 'Unknown';
             account.symbol = '???';
-            account.image = undefined;
+            account.image = '';
           });
         }
       }
@@ -349,6 +337,10 @@ function HomeContent() {
     return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
   };
 
+  const toSol = (lamports: number) => {
+    return lamports / LAMPORTS_PER_SOL;
+  };
+
   if (!mounted) {
     return null;
   }
@@ -483,65 +475,56 @@ function HomeContent() {
                     {accounts.map((account) => (
                       <div
                         key={account.pubkey.toString()}
-                        className="border-b border-gray-700 p-4 flex items-center justify-between"
+                        className="flex items-center justify-between gap-4 p-4 border rounded-lg border-gray-800 bg-gray-900"
                       >
-                        <div className="flex items-center gap-4">
-                          {connected && (
-                            <input
-                              type="checkbox"
-                              checked={selectedAccounts.has(account.pubkey.toString())}
-                              onChange={(e) => {
-                                const newSelected = new Set(selectedAccounts);
-                                if (e.target.checked) {
-                                  newSelected.add(account.pubkey.toString());
-                                } else {
-                                  newSelected.delete(account.pubkey.toString());
-                                }
-                                setSelectedAccounts(newSelected);
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedAccounts.has(account.pubkey.toString())}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedAccounts);
+                              e.target.checked 
+                                ? newSelected.add(account.pubkey.toString())
+                                : newSelected.delete(account.pubkey.toString());
+                              setSelectedAccounts(newSelected);
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                          />
+                          {account.image && (
+                            <img 
+                              src={account.image}
+                              alt={account.name}
+                              className="w-8 h-8 rounded-full"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/placeholder-token.png';
                               }}
-                              className="w-4 h-4"
                             />
                           )}
                           <div>
-                            <div className="flex items-center space-x-3">
-                              {account.image ? (
-                                <div className="relative w-8 h-8">
-                                  <img
-                                    src={account.image}
-                                    alt={account.name}
-                                    className="rounded-full object-cover w-8 h-8"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-                                    }}
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                                  <span className="text-xs">{account.symbol?.[0] || '?'}</span>
-                                </div>
-                              )}
-                              <div>
-                                <p className="font-medium">{account.name || 'Unknown'}</p>
-                                <p className="text-sm text-gray-400">{truncateAddress(account.pubkey.toString(), 6, 6)}</p>
-                              </div>
+                            <div className="font-mono text-sm text-gray-400">
+                              {truncateAddress(account.pubkey.toString())}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{account.name}</span>
+                              <span className="text-gray-400">[{account.symbol}]</span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <p className="font-medium">
-                            {(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                          </p>
-                          {connected && (
-                            <button
-                              onClick={() => handleBurnSingle(account.pubkey)}
-                              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded text-sm"
-                            >
-                              Claim
-                            </button>
-                          )}
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-lg font-medium">
+                            {toSol(account.lamports).toFixed(4)} SOL
+                          </div>
+                          <button
+                            onClick={() => handleBurnSingle(account.pubkey)}
+                            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!connected || loading}
+                          >
+                            {loading ? 'Burning...' : 'Burn'}
+                          </button>
                         </div>
                       </div>
                     ))}
+
                     {accounts.length === 0 && (
                       <div className="p-8 text-center text-gray-400">
                         No rent-exempt accounts found
