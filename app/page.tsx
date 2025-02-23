@@ -48,12 +48,53 @@ function HomeContent() {
     setMounted(true);
   }, []);
 
+  // Handle wallet connection - this takes priority
   useEffect(() => {
-    if (publicKey && !hasSearched) {
+    if (publicKey) {
       setSearchedPubkey(publicKey);
       setIsViewingConnectedWallet(true);
+      setHasSearched(false);
+      setSearchKey('');
+      // Clear URL parameter when wallet connects
+      if (searchParams.has('pubkey')) {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('pubkey');
+        window.history.replaceState({}, '', `${window.location.pathname}${newParams.toString() ? '?' + newParams.toString() : ''}`);
+      }
+    } else {
+      // Only reset states on disconnect if we're viewing the connected wallet
+      if (isViewingConnectedWallet) {
+        setSearchedPubkey(null);
+        setIsViewingConnectedWallet(false);
+        setHasSearched(false);
+      }
     }
-  }, [publicKey, hasSearched]);
+  }, [publicKey]);
+
+  // Handle URL parameters - only if no wallet is connected
+  useEffect(() => {
+    if (!mounted || publicKey) return;
+
+    const pubkeyParam = searchParams.get('pubkey');
+    if (pubkeyParam) {
+      try {
+        const urlPubkey = new PublicKey(pubkeyParam);
+        setSearchedPubkey(urlPubkey);
+        setSearchKey(pubkeyParam);
+        setIsViewingConnectedWallet(false);
+        setHasSearched(true);
+      } catch (error) {
+        console.error('Invalid public key in URL:', error);
+        setSearchError('Invalid public key in URL');
+      }
+    }
+  }, [mounted, searchParams, publicKey]);
+
+  useEffect(() => {
+    if (searchedPubkey) {
+      fetchAccounts(searchedPubkey);
+    }
+  }, [searchedPubkey]);
 
   const connection = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
@@ -167,30 +208,6 @@ function HomeContent() {
       console.error('Search error:', error);
     }
   };
-
-  // Auto-search from URL parameter
-  useEffect(() => {
-    if (!mounted) return;
-    
-    const pubkeyParam = searchParams?.get('pubkey');
-    if (pubkeyParam) {
-      setSearchKey(pubkeyParam);
-      handleSearch(pubkeyParam);
-    }
-  }, [mounted, searchParams]);
-
-  // Fetch accounts when wallet is connected
-  useEffect(() => {
-    if (connected && publicKey) {
-      fetchAccounts(publicKey);
-    }
-  }, [connected, publicKey, fetchAccounts]);
-
-  useEffect(() => {
-    if (!connected) {
-      setHasSearched(false);
-    }
-  }, [connected]);
 
   const getBlockhash = async () => {
     const response = await fetch('/api/blockhash');
