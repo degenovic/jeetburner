@@ -374,369 +374,384 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen bg-black">
-      <Header />
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col items-center gap-16">
-          {/* Main Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
-              Recover Your Rent SOL
-            </h1>
-            <p className="text-gray-300 text-2xl">
-              Find and burn jeet accounts to get your rent back
-            </p>
-            <div className="flex justify-center">
-              <button 
-                onClick={() => {
-                  const guideElement = document.getElementById('guide-section');
-                  if (guideElement) {
-                    const headerOffset = document.querySelector('header')?.clientHeight || 0;
-                    const elementPosition = guideElement.getBoundingClientRect().top + window.scrollY;
-                    const offsetPosition = elementPosition - headerOffset - 20; // Adjust for header height and extra margin
-                    window.scrollTo({
-                      top: offsetPosition,
-                      behavior: 'smooth'
-                    });
-                  }
-                }}
-                className="text-gray-400 hover:text-white text-sm mt-2 cursor-pointer underline flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M12 17V16M12 14C12 11 15 11 15 8.5C15 6.5 13.5 5 12 5C10.5 5 9 6.5 9 8.5" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                WTF is this
-              </button>
+      {/* Custom GIF as background overlay */}
+      <div className="fixed bottom-0 left-0 right-0 w-full pointer-events-none" style={{ zIndex: 0 }}>
+        <img 
+          src="/images/jeetelmo2.gif" 
+          alt="Jeet Elmo" 
+          className="w-full object-cover"
+          style={{ 
+            height: '100vh',
+            opacity: 0.3,
+            maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+          }} 
+        />
+      </div>
+
+      {/* Main content wrapper with relative positioning */}
+      <div className="relative" style={{ zIndex: 1 }}>
+        <Header />
+        <div className="container mx-auto px-4 py-12">
+          <div className="flex flex-col items-center gap-16">
+            {/* Main Heading */}
+            <div className="text-center mb-8">
+              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
+                Recover Your Rent SOL
+              </h1>
+              <p className="text-gray-300 text-2xl">
+                Find and burn jeet accounts to get your rent back
+              </p>
+              <div className="flex justify-center">
+                <button 
+                  onClick={() => {
+                    const guideElement = document.getElementById('guide-section');
+                    if (guideElement) {
+                      const headerOffset = document.querySelector('header')?.clientHeight || 0;
+                      const elementPosition = guideElement.getBoundingClientRect().top + window.scrollY;
+                      const offsetPosition = elementPosition - headerOffset - 20; // Adjust for header height and extra margin
+                      window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                      });
+                    }
+                  }}
+                  className="text-gray-400 hover:text-white text-sm mt-2 cursor-pointer underline flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M12 17V16M12 14C12 11 15 11 15 8.5C15 6.5 13.5 5 12 5C10.5 5 9 6.5 9 8.5" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                  WTF is this
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Wallet Connection and Search */}
-          <div className="w-full max-w-4xl flex flex-col items-center gap-6">
-            <div suppressHydrationWarning>
-              <WalletMultiButton />
-            </div>
-
-            <div className="text-gray-400 text-xl font-bold">OR</div>
-
-            <div className="w-full mb-16">
-              {/* Public Key Search */}
-              <div className="mb-8">
-                <div className="flex gap-4 items-center">
-                  <input
-                    type="text"
-                    value={searchKey}
-                    onChange={(e) => setSearchKey(e.target.value)}
-                    placeholder="Enter a Solana wallet address"
-                    className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
-                  />
-                  <div className="w-fit">
-                    <button
-                      onClick={() => handleSearch()}
-                      className="wallet-adapter-button !w-auto px-6 py-2.5"
-                    >
-                      Search
-                    </button>
-                  </div>
-                </div>
-                {searchError && (
-                  <p className="text-red-500 mt-2 text-sm">{searchError}</p>
-                )}
+            {/* Wallet Connection and Search */}
+            <div className="w-full max-w-4xl flex flex-col items-center gap-6">
+              <div suppressHydrationWarning>
+                <WalletMultiButton />
               </div>
 
-              <div className="h-16"></div>
+              <div className="text-gray-400 text-xl font-bold">OR</div>
 
-              {/* Connected Wallet Info */}
-              {connected && publicKey && (
-                <div className="text-center mb-16">
-                  <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
-                  <p className="text-gray-400">{truncateAddress(publicKey.toString(), 6, 6)}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Account List */}
-          {hasSearched && (
-            <div className="w-full max-w-4xl">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">
-                  Rugged Accounts ({accounts.length})
-                </h3>
-                <div className="text-right">
-                  <p className="text-sm text-gray-400">Total Reclaimable:</p>
-                  <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
-                    {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
-                  </p>
-                  {accounts.length > 0 && connected && isViewingConnectedWallet && (
-                    <button
-                      onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
-                      className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
-                    >
-                      Claim All
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-end">
-                {claimError && (
-                  <p className="text-red-500 mt-2 text-sm">{claimError}</p>
-                )}
-              </div>
-              {loading ? (
-                <div className="text-center py-8">Loading accounts...</div>
-              ) : (
-                <>
-                  {accounts.length > 0 && connected && isViewingConnectedWallet && (
-                    <div className="mb-4">
+              <div className="w-full mb-16">
+                {/* Public Key Search */}
+                <div className="mb-8">
+                  <div className="flex gap-4 items-center">
+                    <input
+                      type="text"
+                      value={searchKey}
+                      onChange={(e) => setSearchKey(e.target.value)}
+                      placeholder="Enter a Solana wallet address"
+                      className="flex-1 px-4 py-2 bg-gray-800 rounded text-white"
+                    />
+                    <div className="w-fit">
                       <button
-                        onClick={handleBurnAttempt}
-                        disabled={selectedAccounts.size === 0}
-                        className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                        onClick={() => handleSearch()}
+                        className="wallet-adapter-button !w-auto px-6 py-2.5"
                       >
-                        {loading ? 'Claiming...' : `Claim Selected (${selectedAccounts.size})`}
+                        Search
                       </button>
                     </div>
+                  </div>
+                  {searchError && (
+                    <p className="text-red-500 mt-2 text-sm">{searchError}</p>
                   )}
+                </div>
 
-                  <div className="bg-gray-800 rounded-lg overflow-hidden">
-                    {accounts.map((account) => (
-                      <div
-                        key={account.pubkey.toString()}
-                        className="flex items-center justify-between gap-4 p-4 border rounded-lg border-gray-800 bg-gray-900"
+                <div className="h-16"></div>
+
+                {/* Connected Wallet Info */}
+                {connected && publicKey && (
+                  <div className="text-center mb-16">
+                    <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
+                    <p className="text-gray-400">{truncateAddress(publicKey.toString(), 6, 6)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Account List */}
+            {hasSearched && (
+              <div className="w-full max-w-4xl">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-semibold">
+                    Rugged Accounts ({accounts.length})
+                  </h3>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">Total Reclaimable:</p>
+                    <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
+                      {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                    </p>
+                    {accounts.length > 0 && connected && isViewingConnectedWallet && (
+                      <button
+                        onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
+                        className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                       >
-                        <div className="flex items-center gap-3">
-                          {isViewingConnectedWallet && connected && (
-                            <input
-                              type="checkbox"
-                              checked={selectedAccounts.has(account.pubkey.toString())}
-                              onChange={(e) => {
-                                const newSelected = new Set(selectedAccounts);
-                                e.target.checked
-                                  ? newSelected.add(account.pubkey.toString())
-                                  : newSelected.delete(account.pubkey.toString());
-                                setSelectedAccounts(newSelected);
-                              }}
-                              className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
-                            />
-                          )}
-                          {account.image && (
-                            <img 
-                              src={account.image}
-                              alt={account.name}
-                              className="w-8 h-8 rounded-full"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/placeholder-token.png';
-                              }}
-                            />
-                          )}
-                          <div>
-                            <div className="font-mono text-sm text-gray-400">
-                              {truncateAddress(account.pubkey.toString())}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold">{account.name}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-sm text-gray-400">
-                            {toSol(account.lamports).toFixed(4)} SOL
-                          </div>
-                          {isViewingConnectedWallet && connected && (
-                            <button
-                              onClick={() => handleBurnSingle(account.pubkey)}
-                              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={loading}
-                            >
-                              {loading ? 'Claiming...' : 'Claim'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {accounts.length === 0 && (
-                      <div className="p-8 text-center text-gray-400">
-                        No rent-exempt accounts found
-                      </div>
+                        Claim All
+                      </button>
                     )}
                   </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* FAQ Section */}
-          <div className="w-full max-w-4xl">
-            <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
-            <h2 className="text-4xl font-bold mb-12 text-center text-white">
-              <u>&apos;Degen&apos;s Guide to Rent Recovery&apos;</u>
-            </h2>
-            
-            <div className="space-y-8">
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
-                🤔 What is Rent Recovery?
-                </h3>
-                <p className="text-gray-300 space-y-4">
-                  If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free jeet money! 
-                </p>
-                <p className="text-gray-300 mt-4">
-                  Learn more about rent on Solana {' '}
-                  <a 
-                    href="https://spl_governance.crsp.dev multisig#rent" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-pink-400 hover:text-pink-300 underline"
-                  >
-                    here
-                  </a>
-                  .
-                </p>
-              </div>
-
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
-                  💰 Why should I close an empty account?
-                </h3>
-                <p className="text-gray-300 space-y-4">
-                  Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
-                  If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
-                  of these collecting dust. WAGMI! 
-                </p>
-              </div>
-
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
-                🔎 How do I find my rekt accounts?
-                </h3>
-                <p className="text-gray-300">
-                  Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
-                </p>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">1.</span>
-                    <span>Have 0 tokens left (you paper-handed everything)</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">2.</span>
-                    <span>Still have that sweet rent SOL locked up</span>
-                  </div>
                 </div>
-                <p className="text-gray-300 mt-4">
-                  No cap, it&apos;s that simple!
-                </p>
-              </div>
+                <div className="flex justify-end">
+                  {claimError && (
+                    <p className="text-red-500 mt-2 text-sm">{claimError}</p>
+                  )}
+                </div>
+                {loading ? (
+                  <div className="text-center py-8">Loading accounts...</div>
+                ) : (
+                  <>
+                    {accounts.length > 0 && connected && isViewingConnectedWallet && (
+                      <div className="mb-4">
+                        <button
+                          onClick={handleBurnAttempt}
+                          disabled={selectedAccounts.size === 0}
+                          className="bg-red-500 hover:bg-red-600 disabled:bg-gray-500 px-4 py-2 rounded"
+                        >
+                          {loading ? 'Claiming...' : `Claim Selected (${selectedAccounts.size})`}
+                        </button>
+                      </div>
+                    )}
 
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                    <div className="bg-gray-800 rounded-lg overflow-hidden">
+                      {accounts.map((account) => (
+                        <div
+                          key={account.pubkey.toString()}
+                          className="flex items-center justify-between gap-4 p-4 border rounded-lg border-gray-800 bg-gray-900"
+                        >
+                          <div className="flex items-center gap-3">
+                            {isViewingConnectedWallet && connected && (
+                              <input
+                                type="checkbox"
+                                checked={selectedAccounts.has(account.pubkey.toString())}
+                                onChange={(e) => {
+                                  const newSelected = new Set(selectedAccounts);
+                                  e.target.checked
+                                    ? newSelected.add(account.pubkey.toString())
+                                    : newSelected.delete(account.pubkey.toString());
+                                  setSelectedAccounts(newSelected);
+                                }}
+                                className="w-4 h-4 rounded border-gray-300 text-red-500 focus:ring-red-500"
+                              />
+                            )}
+                            {account.image && (
+                              <img 
+                                src={account.image}
+                                alt={account.name}
+                                className="w-8 h-8 rounded-full"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = '/placeholder-token.png';
+                                }}
+                              />
+                            )}
+                            <div>
+                              <div className="font-mono text-sm text-gray-400">
+                                {truncateAddress(account.pubkey.toString())}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold">{account.name}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-sm text-gray-400">
+                              {toSol(account.lamports).toFixed(4)} SOL
+                            </div>
+                            {isViewingConnectedWallet && connected && (
+                              <button
+                                onClick={() => handleBurnSingle(account.pubkey)}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={loading}
+                              >
+                                {loading ? 'Claiming...' : 'Claim'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {accounts.length === 0 && (
+                        <div className="p-8 text-center text-gray-400">
+                          No rent-exempt accounts found
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* FAQ Section */}
+            <div className="w-full max-w-4xl">
+              <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
+              <h2 className="text-4xl font-bold mb-12 text-center text-white relative">
+                <u>&apos;Degen&apos;s Guide to Rent Recovery&apos;</u>
+              </h2>
+              
+              <div className="space-y-8 relative">
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                  🤔 What is Rent Recovery?
+                  </h3>
+                  <p className="text-gray-300 space-y-4">
+                    If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free jeet money! 
+                  </p>
+                  <p className="text-gray-300 mt-4">
+                    Learn more about rent on Solana {' '}
+                    <a 
+                      href="https://spl_governance.crsp.dev multisig#rent" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-pink-400 hover:text-pink-300 underline"
+                    >
+                      here
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                    💰 Why should I close an empty account?
+                  </h3>
+                  <p className="text-gray-300 space-y-4">
+                    Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
+                    If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
+                    of these collecting dust. WAGMI! 
+                  </p>
+                </div>
+
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                  🔎 How do I find my rekt accounts?
+                  </h3>
+                  <p className="text-gray-300">
+                    Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">1.</span>
+                      <span>Have 0 tokens left (you paper-handed everything)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">2.</span>
+                      <span>Still have that sweet rent SOL locked up</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-300 mt-4">
+                    No cap, it&apos;s that simple!
+                  </p>
+                </div>
+
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   🔥 What happens when I burn them?
-                </h3>
-                <p className="text-gray-300">
-                  When you burn (close) an empty token account:
-                </p>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">1.</span>
-                    <span>The rent SOL gets sent back to your wallet</span>
+                  </h3>
+                  <p className="text-gray-300">
+                    When you burn (close) an empty token account:
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">1.</span>
+                      <span>The rent SOL gets sent back to your wallet</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">2.</span>
+                      <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one and jeet more)</span>
+                    </div>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">2.</span>
-                    <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one and jeet more)</span>
-                  </div>
+                  <p className="text-gray-300 mt-4">
+                    It&apos;s basically like getting an airdrop for being messy with your token accounts. Based!
+                  </p>
                 </div>
-                <p className="text-gray-300 mt-4">
-                  It&apos;s basically like getting an airdrop for being messy with your token accounts. Based!
-                </p>
-              </div>
 
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   🚨 Is this safe, ser?
-                </h3>
-                <p className="text-gray-300 space-y-4">
-                  Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
-                  The code is open source, and we&apos;re just using standard Solana instructions. DYOR but this is literally 
-                  free money you left on the table!
-                </p>
-              </div>
+                  </h3>
+                  <p className="text-gray-300 space-y-4">
+                    Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
+                    The code is open source, and we&apos;re just using standard Solana instructions. DYOR but this is literally 
+                    free money you left on the table!
+                  </p>
+                </div>
 
-              <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
-                <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
+                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
                   💸 Any alpha leaks?
-                </h3>
-                <p className="text-gray-300">
-                  Here&apos;s some galaxy brain moves:
-                </p>
-                <div className="mt-4 space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">1.</span>
-                    <span>Check your old wallets - your paper hand history might pay off</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">2.</span>
-                    <span>Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-pink-400">3.</span>
-                    <span>Make it a habit to clean up after rugging yourself</span>
+                  </h3>
+                  <p className="text-gray-300">
+                    Here&apos;s some galaxy brain moves:
+                  </p>
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">1.</span>
+                      <span>Check your old wallets - your paper hand history might pay off</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">2.</span>
+                      <span>Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-pink-400">3.</span>
+                      <span>Make it a habit to clean up after rugging yourself</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div style={{ marginTop: '25px' }} />
-
-      {/* Helius Attribution and Footer */}
-      <div className="mt-16">
-        <div className="flex flex-col items-center justify-center text-center mb-16">
-          <div className="text-gray-400 flex items-center gap-2">
-            Powered by
-            <a 
-              href="https://www.helius.dev/solana-rpc-nodes" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="flex items-center hover:text-white transition-colors"
-            >
-              <img 
-                src="https://www.helius.dev/logo.svg" 
-                alt="Helius" 
-                className="h-5 inline-block"
-              />
-            </a>
+        <div className="mt-16">
+          <div className="flex flex-col items-center justify-center text-center mb-16">
+            <div style={{ marginBottom: '25px' }} />
           </div>
-          <a 
-            href="https://docs.helius.dev" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="text-gray-400 hover:text-white text-sm mt-2 transition-colors"
-          >
-            View Documentation →
-          </a>
-          <div style={{ marginBottom: '25px' }} />
-        </div>
-        <Footer />
-        <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
-          <div className="max-w-2xl">
-            <p className="mb-4 text-center mx-auto">
-              This tool allows you to close empty token accounts and reclaim SOL. Please verify all transactions before signing. 
-              All actions are performed at your own risk. No financial advice is provided.
-            </p>
+          <Footer />
+          <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
+            <div className="max-w-2xl">
+              <p className="mb-4 text-center mx-auto">
+                This tool allows you to close empty token accounts and reclaim SOL. Please verify all transactions before signing. 
+                All actions are performed at your own risk. No financial advice is provided.
+              </p>
 
-            <p className="mb-4 text-center mx-auto">
-              This is a new domain that may show security warnings in some wallets. The tool is open source and only interacts 
-              with the Solana blockchain to close empty token accounts.
-            </p>
+              <p className="mb-4 text-center mx-auto">
+                This is a new domain that may show security warnings in some wallets. The tool is open source and only interacts 
+                with the Solana blockchain to close empty token accounts.
+              </p>
 
-            <div className="text-xs text-gray-500 text-center mx-auto">
-              <a href="https://github.com/yourusername/pftc" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
-                View on GitHub
-              </a>
-              <span className="mx-2">•</span>
-              Last updated: {new Date().toLocaleDateString()}
+              <div className="text-xs text-gray-500 text-center mx-auto">
+                <a href="https://github.com/yourusername/pftc" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
+                  View on GitHub
+                </a>
+              </div>
+
+              {/* Helius Attribution */}
+              <div className="text-gray-400 flex items-center justify-center gap-2 mt-4">
+                Powered by
+                <a 
+                  href="https://www.helius.dev/solana-rpc-nodes" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center hover:text-white transition-colors"
+                >
+                  <img 
+                    src="https://www.helius.dev/logo.svg" 
+                    alt="Helius" 
+                    className="h-5 inline-block"
+                  />
+                </a>
+                <a 
+                  href="https://docs.helius.dev" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  View Documentation →
+                </a>
+              </div>
             </div>
           </div>
         </div>
