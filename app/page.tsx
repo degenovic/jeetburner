@@ -383,7 +383,7 @@ function HomeContent() {
               Recover Your Rent SOL
             </h1>
             <p className="text-gray-300 text-2xl">
-              Find and close empty token accounts to get some beer money
+              Find and burn jeet accounts to get your rent back
             </p>
             <div className="flex justify-center">
               <button 
@@ -460,7 +460,7 @@ function HomeContent() {
             <div className="w-full max-w-4xl">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">
-                  Rent-exempt Accounts ({accounts.length})
+                  Rugged Accounts ({accounts.length})
                 </h3>
                 <div className="text-right">
                   <p className="text-sm text-gray-400">Total Reclaimable:</p>
@@ -580,7 +580,7 @@ function HomeContent() {
                 </h3>
                 <p className="text-gray-300 space-y-4">
                   If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free beer money! 
+                  leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free jeet money! 
                 </p>
                 <p className="text-gray-300 mt-4">
                   Learn more about rent on Solana {' '}
@@ -598,7 +598,7 @@ function HomeContent() {
 
               <div className="bg-gray-800/50 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/70 transition-all">
                 <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
-                  💰 How do I close an empty account?
+                  💰 Why should I close an empty account?
                 </h3>
                 <p className="text-gray-300 space-y-4">
                   Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
@@ -643,7 +643,7 @@ function HomeContent() {
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="text-pink-400">2.</span>
-                    <span>The token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
+                    <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one and jeet more)</span>
                   </div>
                 </div>
                 <p className="text-gray-300 mt-4">
