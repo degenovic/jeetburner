@@ -374,21 +374,6 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen bg-black">
-      {/* Custom GIF as background overlay */}
-      <div className="fixed bottom-0 left-0 right-0 w-full pointer-events-none" style={{ zIndex: 0 }}>
-        <img 
-          src="/images/jeetelmo2.gif" 
-          alt="Jeet Elmo" 
-          className="w-full object-cover"
-          style={{ 
-            height: '100vh',
-            opacity: 0.3,
-            maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
-          }} 
-        />
-      </div>
-
       {/* Main content wrapper with relative positioning */}
       <div className="relative" style={{ zIndex: 1 }}>
         <Header />
@@ -400,7 +385,7 @@ function HomeContent() {
                 Recover Your Rent SOL
               </h1>
               <p className="text-gray-300 text-2xl">
-                Find and burn jeet accounts to get your rent back
+                Find and burn jeeted accounts to get SOL back
               </p>
               <div className="flex justify-center">
                 <button 
@@ -597,7 +582,7 @@ function HomeContent() {
                   </h3>
                   <p className="text-gray-300 space-y-4">
                     If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
-                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free jeet money! 
+                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free rug money! 
                   </p>
                   <p className="text-gray-300 mt-4">
                     Learn more about rent on Solana {' '}
@@ -620,7 +605,7 @@ function HomeContent() {
                   <p className="text-gray-300 space-y-4">
                     Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
                     If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
-                    of these collecting dust. WAGMI! 
+                    of these collecting dust.
                   </p>
                 </div>
 
@@ -641,9 +626,6 @@ function HomeContent() {
                       <span>Still have that sweet rent SOL locked up</span>
                     </div>
                   </div>
-                  <p className="text-gray-300 mt-4">
-                    No cap, it&apos;s that simple!
-                  </p>
                 </div>
 
                 <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
@@ -660,11 +642,11 @@ function HomeContent() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-400">2.</span>
-                      <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one and jeet more)</span>
+                      <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
                     </div>
                   </div>
                   <p className="text-gray-300 mt-4">
-                    It&apos;s basically like getting an airdrop for being messy with your token accounts. Based!
+                    It&apos;s basically like getting an airdrop for being a jeeter.
                   </p>
                 </div>
 
@@ -673,8 +655,7 @@ function HomeContent() {
                   🚨 Is this safe, ser?
                   </h3>
                   <p className="text-gray-300 space-y-4">
-                    Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. 
-                    The code is open source, and we&apos;re just using standard Solana instructions. DYOR but this is literally 
+                    Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. DYOR but this is literally 
                     free money you left on the table!
                   </p>
                 </div>
@@ -709,6 +690,21 @@ function HomeContent() {
           <div className="flex flex-col items-center justify-center text-center mb-16">
             <div style={{ marginBottom: '25px' }} />
           </div>
+
+          {/* Custom GIF as background overlay */}
+      <div className="absolute bottom-0 left-0 right-0 w-full pointer-events-none" style={{ zIndex: 0 }}>
+        <img 
+          src="/images/jeetelmo2.gif" 
+          alt="Jeet Elmo" 
+          className="w-full object-cover"
+          style={{ 
+            opacity: 0.5,
+            maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+          }} 
+        />
+      </div>
+
           <Footer />
           <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
             <div className="max-w-2xl">
@@ -718,15 +714,9 @@ function HomeContent() {
               </p>
 
               <p className="mb-4 text-center mx-auto">
-                This is a new domain that may show security warnings in some wallets. The tool is open source and only interacts 
+                This is a new domain that may show security warnings in some wallets. The tool only interacts 
                 with the Solana blockchain to close empty token accounts.
               </p>
-
-              <div className="text-xs text-gray-500 text-center mx-auto">
-                <a href="https://github.com/yourusername/pftc" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">
-                  View on GitHub
-                </a>
-              </div>
 
               {/* Helius Attribution */}
               <div className="text-gray-400 flex items-center justify-center gap-2 mt-4">
