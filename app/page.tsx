@@ -381,7 +381,7 @@ function HomeContent() {
           <div className="flex flex-col items-center gap-16">
             {/* Main Heading */}
             <div className="text-center mb-8">
-              <p className="text-gray-300 text-2xl" style={{ marginTop: '15px' }}>
+              <p className="text-white text-2xl" style={{ marginTop: '15px' }}>
                 Find and burn rugged accounts to get SOL back
               </p>
               <div className="flex justify-center">
@@ -572,22 +572,22 @@ function HomeContent() {
                 <u>&apos;Degen&apos;s Guide to Rent Recovery&apos;</u>
               </h2>
               
-              <div className="space-y-8 relative">
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+              <div className="space-y-8 relative" style={{ zIndex: 10, isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🤔 What is Rent Recovery?
                   </h3>
-                  <p className="text-gray-300 space-y-4">
+                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
                     leftover rent (~0.002 SOL each). This tool helps you claim that SOL back.
                   </p>
-                  <p className="text-gray-300 mt-4">
+                  <p className="text-white mt-4">
                     Learn more about rent on Solana {' '}
                     <a 
                       href="https://solana.com/docs/core/accounts#rent" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-pink-400 hover:text-pink-300 underline"
+                      className="text-pink-500 hover:text-pink-400 underline"
                     >
                       here
                     </a>
@@ -595,87 +595,87 @@ function HomeContent() {
                   </p>
                 </div>
 
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                     💰 Why should I close an empty account?
                   </h3>
-                  <p className="text-gray-300 space-y-4">
+                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
                     If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
                     of these collecting dust.
                   </p>
                 </div>
 
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🔎 How do I find my rekt accounts?
                   </h3>
-                  <p className="text-gray-300">
+                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
                   </p>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">1.</span>
-                      <span>Have 0 tokens left (you paper-handed everything)</span>
+                      <span className="text-pink-500">1.</span>
+                      <span className="text-white">Have 0 tokens left (you paper-handed everything)</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">2.</span>
-                      <span>Still have that sweet rent SOL locked up</span>
+                      <span className="text-pink-500">2.</span>
+                      <span className="text-white">Still have that sweet rent SOL locked up</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🔥 What happens when I burn them?
                   </h3>
-                  <p className="text-gray-300">
+                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     When you burn (close) an empty token account:
                   </p>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">1.</span>
-                      <span>The rent SOL gets sent back to your wallet</span>
+                      <span className="text-pink-500">1.</span>
+                      <span className="text-white">The rent SOL gets sent back to your wallet</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">2.</span>
-                      <span>The empty token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
+                      <span className="text-pink-500">2.</span>
+                      <span className="text-white">The empty token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
                     </div>
                   </div>
-                  <p className="text-gray-300 mt-4">
+                  <p className="text-white mt-4">
                     It&apos;s basically like getting an airdrop for being a jeeter.
                   </p>
                 </div>
 
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🚨 Is this safe, ser?
                   </h3>
-                  <p className="text-gray-300 space-y-4">
+                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     It's safe-pilled. We only close accounts that have zero tokens and only recover the rent SOL. DYOR but this is literally 
                     free money you left on the table!
                   </p>
                 </div>
 
-                <div className="bg-gray-800/30 rounded-lg p-8 backdrop-blur-sm hover:bg-gray-800/50 transition-all">
-                  <h3 className="text-2xl font-bold mb-4 mt-4" style={{ marginBottom: '15px' }}>
+                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   💸 Any alpha leaks?
                   </h3>
-                  <p className="text-gray-300">
+                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     Here&apos;s some galaxy brain moves:
                   </p>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">1.</span>
-                      <span>Check your old wallets - your paper hand history might pay off</span>
+                      <span className="text-pink-500">1.</span>
+                      <span className="text-white">Check your old wallets - your paper hand history might pay off</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">2.</span>
-                      <span>Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
+                      <span className="text-pink-500">2.</span>
+                      <span className="text-white">Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
                     </div>
                     <div className="flex items-start gap-2">
-                      <span className="text-pink-400">3.</span>
-                      <span>Make it a habit to clean up after rugging yourself</span>
+                      <span className="text-pink-500">3.</span>
+                      <span className="text-white">Make it a habit to clean up after rugging yourself</span>
                     </div>
                   </div>
                 </div>
@@ -689,45 +689,47 @@ function HomeContent() {
           </div>
 
           {/* Custom GIF as background overlay */}
-      <div className="absolute bottom-0 left-0 right-0 w-full pointer-events-none" style={{ zIndex: 0 }}>
-        <img 
-          src="/images/jeetelmo2.gif" 
-          alt="Jeet Elmo" 
-          className="w-full object-cover"
-          style={{ 
-            opacity: 0.5,
-            maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
-          }} 
-        />
-      </div>
+          <div className="absolute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0 }}>
+            <div className="max-w-4xl w-full flex justify-center">
+              <img 
+                src="/images/jeetelmo2.gif" 
+                alt="Jeet Elmo" 
+                style={{ 
+                  opacity: 0.66,
+                  maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+                }} 
+              />
+            </div>
+          </div>
 
           <Footer />
-          <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
-            <div className="max-w-2xl">
-
-              {/* Helius Attribution */}
-              <div className="text-gray-400 flex items-center justify-center gap-2 mt-4">
-                Powered by
+          <div className="bg-gray-900 text-white py-6 px-4 text-sm grid place-items-center" style={{ position: 'relative', zIndex: 10 }}>
+            <div className="max-w-2xl" style={{ position: 'relative', zIndex: 10 }}>
+              <div className="text-white flex items-center justify-center gap-2 mt-4" style={{ paddingBottom: '10px', position: 'relative', zIndex: 10 }}>
+                <span style={{ color: 'white', opacity: 1 }}>Powered by</span>
                 <a 
                   href="https://www.helius.dev/solana-rpc-nodes" 
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="flex items-center hover:text-white transition-colors"
+                  style={{ position: 'relative', zIndex: 10 }}
                 >
                   <img 
                     src="https://www.helius.dev/logo.svg" 
                     alt="Helius" 
                     className="h-5 inline-block"
+                    style={{ opacity: 1 }}
                   />
                 </a>
                 <a 
                   href="https://docs.helius.dev" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="text-gray-400 hover:text-white text-sm transition-colors"
+                  className="text-white hover:text-white text-sm transition-colors"
+                  style={{ color: 'white', opacity: 1 }}
                 >
-                  View Documentation →
+                  <span style={{ color: 'white', opacity: 1 }}>View Documentation →</span>
                 </a>
               </div>
             </div>
