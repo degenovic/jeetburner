@@ -381,11 +381,8 @@ function HomeContent() {
           <div className="flex flex-col items-center gap-16">
             {/* Main Heading */}
             <div className="text-center mb-8">
-              <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">
-                Recover Your Rent SOL
-              </h1>
-              <p className="text-gray-300 text-2xl">
-                Find and burn jeeted accounts to get SOL back
+              <p className="text-gray-300 text-2xl" style={{ marginTop: '15px' }}>
+                Find and burn rugged accounts to get SOL back
               </p>
               <div className="flex justify-center">
                 <button 
