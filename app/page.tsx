@@ -578,7 +578,7 @@ function HomeContent() {
                   🤔 What is Rent Recovery?
                   </h3>
                   <p className="text-gray-300 space-y-4">
-                    If you&apos;ve been aping into tokens and NFTs on Solana, you probably have some rekt token accounts with 
+                    If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
                     leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free rug money! 
                   </p>
                   <p className="text-gray-300 mt-4">
