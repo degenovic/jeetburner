@@ -705,15 +705,6 @@ function HomeContent() {
           <Footer />
           <div className="bg-gray-900 text-gray-400 py-6 px-4 text-sm grid place-items-center">
             <div className="max-w-2xl">
-              <p className="mb-4 text-center mx-auto">
-                This tool allows you to close empty token accounts and reclaim SOL. Please verify all transactions before signing. 
-                All actions are performed at your own risk. No financial advice is provided.
-              </p>
-
-              <p className="mb-4 text-center mx-auto">
-                This is a new domain that may show security warnings in some wallets. The tool only interacts 
-                with the Solana blockchain to close empty token accounts.
-              </p>
 
               {/* Helius Attribution */}
               <div className="text-gray-400 flex items-center justify-center gap-2 mt-4">
