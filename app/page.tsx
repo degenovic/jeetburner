@@ -579,12 +579,12 @@ function HomeContent() {
                   </h3>
                   <p className="text-gray-300 space-y-4">
                     If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
-                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back. It ain&apos;t much, but hey, it&apos;s free rug money! 
+                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back.
                   </p>
                   <p className="text-gray-300 mt-4">
                     Learn more about rent on Solana {' '}
                     <a 
-                      href="https://spl_governance.crsp.dev multisig#rent" 
+                      href="https://solana.com/docs/core/accounts#rent" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-pink-400 hover:text-pink-300 underline"
@@ -652,7 +652,7 @@ function HomeContent() {
                   🚨 Is this safe, ser?
                   </h3>
                   <p className="text-gray-300 space-y-4">
-                    Absolutely based and safe-pilled! We only close accounts that have zero tokens and only recover the rent SOL. DYOR but this is literally 
+                    It's safe-pilled. We only close accounts that have zero tokens and only recover the rent SOL. DYOR but this is literally 
                     free money you left on the table!
                   </p>
                 </div>
