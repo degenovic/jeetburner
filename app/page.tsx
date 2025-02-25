@@ -497,7 +497,7 @@ function HomeContent() {
                       </div>
                     )}
 
-                    <div className="bg-gray-800 rounded-lg overflow-hidden">
+                    <div className="bg-gray-800 rounded-lg overflow-hidden" style={{ marginTop: '15px' }}>
                       {accounts.map((account) => (
                         <div
                           key={account.pubkey.toString()}
