@@ -38,9 +38,9 @@ function HomeContent() {
   const [loading, setLoading] = useState(false);
   const [searchKey, setSearchKey] = useState('');
   const [searchError, setSearchError] = useState('');
+  const [searchedPubkey, setSearchedPubkey] = useState<string | null>(null);
   const [selectedAccounts, setSelectedAccounts] = useState<Set<string>>(new Set());
   const [mounted, setMounted] = useState(false);
-  const [searchedPubkey, setSearchedPubkey] = useState<PublicKey | null>(null);
   const [isViewingConnectedWallet, setIsViewingConnectedWallet] = useState(true);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -53,7 +53,7 @@ function HomeContent() {
   // Handle wallet connection - this takes priority
   useEffect(() => {
     if (publicKey) {
-      setSearchedPubkey(publicKey);
+      setSearchedPubkey(publicKey.toString());
       setIsViewingConnectedWallet(true);
       setHasSearched(false);
       setSearchKey('');
@@ -81,7 +81,7 @@ function HomeContent() {
     if (pubkeyParam) {
       try {
         const urlPubkey = new PublicKey(pubkeyParam);
-        setSearchedPubkey(urlPubkey);
+        setSearchedPubkey(urlPubkey.toString());
         setSearchKey(pubkeyParam);
         setIsViewingConnectedWallet(false);
         setHasSearched(true);
@@ -92,46 +92,24 @@ function HomeContent() {
     }
   }, [mounted, searchParams, publicKey]);
 
-  useEffect(() => {
-    if (searchedPubkey) {
-      fetchAccounts(searchedPubkey);
-    }
-  }, [searchedPubkey]);
-
-  useEffect(() => {
-    if (publicKey) {
-      fetchAccounts(publicKey);
-    }
-  }, [publicKey, fetchAccounts]);
-
-  // Log when fee wallet address changes
-  useEffect(() => {
-    if (feeWalletAddress) {
-      console.log('Fee wallet address is set to:', feeWalletAddress);
-    } else {
-      console.warn('Fee wallet address is not set, will use default:', DEFAULT_FEE_WALLET);
-    }
-  }, [feeWalletAddress]);
-
   const connection = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
     if (!rpcUrl) {
       console.error('RPC URL not configured');
-      return new Connection('https://api.mainnet-beta.solana.com');
+      return null;
     }
     return new Connection(rpcUrl, {
       commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
     });
   }, []);
 
-  const fetchAccounts = useCallback(async (key: PublicKey) => {
+  const fetchAccounts = useCallback(async (walletPubkey: PublicKey) => {
     try {
       setLoading(true);
       setSearchError('');
       setHasSearched(true);
       
-      const response = await fetch(`/api/accounts?pubkey=${key.toString()}`);
+      const response = await fetch(`/api/accounts?pubkey=${walletPubkey.toString()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch accounts');
       }
@@ -203,26 +181,50 @@ function HomeContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [connection]);
+
+  useEffect(() => {
+    if (publicKey) {
+      fetchAccounts(publicKey);
+    }
+  }, [publicKey, fetchAccounts]);
+
+  useEffect(() => {
+    if (searchedPubkey) {
+      setIsViewingConnectedWallet(false);
+      fetchAccounts(new PublicKey(searchedPubkey));
+    }
+  }, [searchedPubkey, fetchAccounts]);
+
+  // Log when fee wallet address changes
+  useEffect(() => {
+    if (feeWalletAddress) {
+      console.log('Fee wallet address is set to:', feeWalletAddress);
+    } else {
+      console.warn('Fee wallet address is not set, will use default:', DEFAULT_FEE_WALLET);
+    }
+  }, [feeWalletAddress]);
 
   const handleSearch = async (key?: string) => {
     const searchValue = key || searchKey;
+    
     if (!searchValue) {
-      setSearchError('Please enter a public key');
+      setSearchError('Please enter a wallet address');
       return;
     }
 
     try {
+      // Validate the pubkey
       const pubkey = new PublicKey(searchValue);
-      setSearchError('');
-      setSearchedPubkey(pubkey);
+      setSearchedPubkey(pubkey.toString());
       setIsViewingConnectedWallet(publicKey ? pubkey.equals(publicKey) : false);
       setClaimError(null);
       setHasSearched(true);
+      setSearchError('');
       fetchAccounts(pubkey);
     } catch (error) {
-      setSearchError('Invalid public key');
-      console.error('Search error:', error);
+      console.error('Invalid public key:', error);
+      setSearchError('Invalid wallet address');
     }
   };
 
@@ -258,6 +260,10 @@ function HomeContent() {
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
     if (!publicKey || !signTransaction) return;
+    if (!connection) {
+      toast.error('Connection not available');
+      return;
+    }
     
     // Use default fee wallet if none is set
     const targetFeeWallet = feeWalletAddress || DEFAULT_FEE_WALLET;
@@ -271,10 +277,10 @@ function HomeContent() {
       
       // Create close account instruction
       const closeInstruction = createCloseAccountInstruction(
-        new PublicKey(account.pubkey), // Token account to close
-        publicKey,                      // Destination for rent SOL
-        publicKey,                      // Authority
-        []                             // No multisig
+        account.pubkey, // Token account to close
+        publicKey,      // Destination for rent SOL
+        publicKey,      // Authority
+        []             // No multisig
       );
       
       // Add transfer instruction for fee
@@ -284,8 +290,7 @@ function HomeContent() {
         lamports: feeAmount
       });
       
-      transaction.add(closeInstruction);
-      transaction.add(transferInstruction);
+      transaction.add(closeInstruction, transferInstruction);
       
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       transaction.recentBlockhash = blockhash;
@@ -294,36 +299,35 @@ function HomeContent() {
       const signed = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signed.serialize());
       
-      toast.loading('Closing account...');
+      console.log('Transaction sent:', signature);
       
       const confirmation = await connection.confirmTransaction({
-        signature,
         blockhash,
-        lastValidBlockHeight
+        lastValidBlockHeight,
+        signature
       });
       
       if (confirmation.value.err) {
-        throw new Error('Failed to confirm transaction');
+        throw new Error('Transaction failed');
       }
       
-      toast.success(`Successfully closed account and reclaimed ${(userAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee)`);
-      
+      toast.success(`Successfully claimed ${(userAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee)!`);
       fetchAccounts(publicKey);
       
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error burning account:', error);
-      
-      if (error instanceof Error) {
-        toast.error(`Failed to close account: ${error.message}`);
-      } else {
-        toast.error('Failed to close account. Please try again.');
-      }
+      toast.error('Failed to claim account');
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress]);
 
   const handleBurnSingle = useCallback(async (accountPubkey: PublicKey) => {
     if (!publicKey || !signTransaction) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (!connection) {
+      toast.error('Connection not available');
       return;
     }
 
@@ -336,62 +340,65 @@ function HomeContent() {
     }
 
     try {
-      const { blockhash, lastValidBlockHeight } = await getBlockhash();
-      
-      // Find the account to get its lamports
-      const account = accounts.find(acc => acc.pubkey.toString() === accountPubkey.toString());
+      const account = accounts.find(acc => acc.pubkey.equals(accountPubkey));
       if (!account) {
         toast.error('Account not found');
         return;
       }
+
+      const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
       // Calculate fee amount
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       const userAmount = account.lamports - feeAmount;
       
+      const transaction = new Transaction();
+      
       // Create close account instruction
       const closeInstruction = createCloseAccountInstruction(
-        accountPubkey,
-        publicKey,  // Destination for reclaimed SOL
-        publicKey   // Owner of the account
+        account.pubkey,
+        publicKey,
+        publicKey,
+        []
       );
-
+      
       // Create fee transfer instruction
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: publicKey,
-        toPubkey: new PublicKey(feeWalletAddress || DEFAULT_FEE_WALLET),
+        toPubkey: new PublicKey(targetFeeWallet),
         lamports: feeAmount
       });
 
-      const transaction = new Transaction()
-        .add(closeInstruction)
-        .add(transferInstruction);
-        
+      transaction.add(closeInstruction, transferInstruction);
       transaction.recentBlockhash = blockhash;
-      transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
-
-      // This will trigger wallet prompt
+      
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       
       await connection.confirmTransaction({
-        signature,
         blockhash,
-        lastValidBlockHeight
+        lastValidBlockHeight,
+        signature
       });
       
       toast.success(`Successfully claimed ${(userAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee)!`);
       fetchAccounts(publicKey);
+      
     } catch (error) {
-      console.error('Claim error:', error);
-      toast.error('Failed to claim SOL');
+      console.error('Error burning account:', error);
+      setClaimError('Failed to claim account');
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress, accounts]);
 
   const handleBurnMultiple = useCallback(async () => {
     if (!publicKey || !signTransaction) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+
+    if (!connection) {
+      toast.error('Connection not available');
       return;
     }
 
@@ -426,46 +433,41 @@ function HomeContent() {
         createCloseAccountInstruction(
           account.pubkey,
           publicKey,
-          publicKey
+          publicKey,
+          []
         )
       );
-
+      
       // Create fee transfer instruction
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: publicKey,
         toPubkey: new PublicKey(targetFeeWallet),
         lamports: totalFeeAmount
       });
-
-      // Create single transaction with all instructions
+      
       const transaction = new Transaction();
       
-      // Add all close instructions
+      // Add all instructions
       closeInstructions.forEach(instruction => transaction.add(instruction));
-      
-      // Add fee transfer instruction
       transaction.add(transferInstruction);
       
       transaction.recentBlockhash = blockhash;
-      transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
-
-      // Sign and send
+      
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       
-      // Confirm transaction
       await connection.confirmTransaction({
-        signature,
         blockhash,
-        lastValidBlockHeight
+        lastValidBlockHeight,
+        signature
       });
       
       toast.success(`Successfully claimed ${(totalUserAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee) from ${accountsToProcess.length} accounts!`);
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
-      console.error('Bulk claim error:', error);
+      console.error('Error in bulk claim:', error);
       toast.error('Failed to claim accounts');
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress, accounts, selectedAccounts]);
