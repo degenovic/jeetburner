@@ -98,6 +98,21 @@ function HomeContent() {
     }
   }, [searchedPubkey]);
 
+  useEffect(() => {
+    if (publicKey) {
+      fetchAccounts(publicKey);
+    }
+  }, [publicKey, fetchAccounts]);
+
+  // Log when fee wallet address changes
+  useEffect(() => {
+    if (feeWalletAddress) {
+      console.log('Fee wallet address is set to:', feeWalletAddress);
+    } else {
+      console.warn('Fee wallet address is not set, will use default:', DEFAULT_FEE_WALLET);
+    }
+  }, [feeWalletAddress]);
+
   const connection = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
     if (!rpcUrl) {
@@ -211,23 +226,41 @@ function HomeContent() {
     }
   };
 
+  const DEFAULT_FEE_WALLET = "pubkey";
+  
   const getBlockhash = async () => {
-    const response = await fetch('/api/blockhash');
-    if (!response.ok) {
-      throw new Error('Failed to get blockhash');
+    try {
+      const response = await fetch('/api/blockhash');
+      if (!response.ok) {
+        console.error('Failed to get blockhash:', await response.text());
+        throw new Error('Failed to get blockhash');
+      }
+      const data = await response.json();
+      
+      // Store the fee wallet address
+      if (data.feeWalletAddress) {
+        setFeeWalletAddress(data.feeWalletAddress);
+        console.log('Fee wallet address set:', data.feeWalletAddress);
+      } else {
+        console.warn('No fee wallet address received from API');
+        // Use default if not provided
+        setFeeWalletAddress(DEFAULT_FEE_WALLET);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getBlockhash:', error);
+      // Use default if API fails
+      setFeeWalletAddress(DEFAULT_FEE_WALLET);
+      throw error;
     }
-    const data = await response.json();
-    
-    // Store the fee wallet address
-    if (data.feeWalletAddress) {
-      setFeeWalletAddress(data.feeWalletAddress);
-    }
-    
-    return data;
   };
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
-    if (!publicKey || !signTransaction || !feeWalletAddress) return;
+    if (!publicKey || !signTransaction) return;
+    
+    // Use default fee wallet if none is set
+    const targetFeeWallet = feeWalletAddress || DEFAULT_FEE_WALLET;
     
     try {
       const transaction = new Transaction();
@@ -247,7 +280,7 @@ function HomeContent() {
       // Add transfer instruction for fee
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: publicKey,
-        toPubkey: new PublicKey(feeWalletAddress),
+        toPubkey: new PublicKey(targetFeeWallet),
         lamports: feeAmount
       });
       
@@ -294,7 +327,10 @@ function HomeContent() {
       return;
     }
 
-    if (!feeWalletAddress) {
+    // Use default fee wallet if none is set
+    const targetFeeWallet = feeWalletAddress || DEFAULT_FEE_WALLET;
+    if (!targetFeeWallet) {
+      console.error('No fee wallet address available');
       toast.error('Fee wallet address not configured');
       return;
     }
@@ -323,7 +359,7 @@ function HomeContent() {
       // Create fee transfer instruction
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: publicKey,
-        toPubkey: new PublicKey(feeWalletAddress),
+        toPubkey: new PublicKey(feeWalletAddress || DEFAULT_FEE_WALLET),
         lamports: feeAmount
       });
 
@@ -353,13 +389,16 @@ function HomeContent() {
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress, accounts]);
 
-  const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
+  const handleBurnMultiple = useCallback(async () => {
     if (!publicKey || !signTransaction) {
       toast.error('Please connect your wallet first');
       return;
     }
 
-    if (!feeWalletAddress) {
+    // Use default fee wallet if none is set
+    const targetFeeWallet = feeWalletAddress || DEFAULT_FEE_WALLET;
+    if (!targetFeeWallet) {
+      console.error('No fee wallet address available');
       toast.error('Fee wallet address not configured');
       return;
     }
@@ -367,16 +406,25 @@ function HomeContent() {
     try {
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
+      // If no accounts are selected, process all accounts
+      const accountsToProcess = selectedAccounts.size > 0 
+        ? accounts.filter(acc => selectedAccounts.has(acc.pubkey.toString()))
+        : accounts;
+      
+      if (accountsToProcess.length === 0) {
+        toast.error('No accounts to process');
+        return;
+      }
+      
       // Calculate total lamports and fee
-      const accountsToProcess = accounts.filter(acc => accountsToBurn.includes(acc.pubkey.toString()));
       const totalLamports = accountsToProcess.reduce((sum, acc) => sum + acc.lamports, 0);
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       const totalUserAmount = totalLamports - totalFeeAmount;
       
       // Create instructions for all accounts
-      const closeInstructions = accountsToBurn.map(accountPubkey => 
+      const closeInstructions = accountsToProcess.map(account => 
         createCloseAccountInstruction(
-          new PublicKey(accountPubkey),
+          account.pubkey,
           publicKey,
           publicKey
         )
@@ -385,7 +433,7 @@ function HomeContent() {
       // Create fee transfer instruction
       const transferInstruction = SystemProgram.transfer({
         fromPubkey: publicKey,
-        toPubkey: new PublicKey(feeWalletAddress),
+        toPubkey: new PublicKey(targetFeeWallet),
         lamports: totalFeeAmount
       });
 
@@ -413,14 +461,14 @@ function HomeContent() {
         lastValidBlockHeight
       });
       
-      toast.success(`Successfully claimed ${(totalUserAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee) from ${accountsToBurn.length} accounts!`);
+      toast.success(`Successfully claimed ${(totalUserAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (after 20% fee) from ${accountsToProcess.length} accounts!`);
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
       toast.error('Failed to claim accounts');
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress, accounts]);
+  }, [publicKey, signTransaction, connection, fetchAccounts, feeWalletAddress, accounts, selectedAccounts]);
 
   const handleBurnAttempt = useCallback(async () => {
     if (!publicKey || !signTransaction) {
@@ -429,8 +477,8 @@ function HomeContent() {
     }
 
     setClaimError(null);
-    handleBurnMultiple(Array.from(selectedAccounts));
-  }, [publicKey, signTransaction, selectedAccounts, handleBurnMultiple]);
+    handleBurnMultiple();
+  }, [publicKey, signTransaction, handleBurnMultiple]);
 
   const truncateAddress = (address: string, startLength = 4, endLength = 4) => {
     if (!address) return '';
@@ -545,7 +593,7 @@ function HomeContent() {
                     </p>
                     {accounts.length > 0 && connected && isViewingConnectedWallet && (
                       <button
-                        onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
+                        onClick={() => handleBurnMultiple()}
                         className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                       >
                         Claim All
