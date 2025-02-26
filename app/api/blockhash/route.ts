@@ -3,12 +3,19 @@ import { Connection } from '@solana/web3.js';
 
 export async function GET(request: NextRequest) {
   const rpcUrl = process.env.MAINNET_RPC_URL;
-  const feeWalletAddress = process.env.FEE_WALLET_ADDRESS || "pubkey";
+  const feeWalletAddress = process.env.FEE_WALLET_ADDRESS;
   const feePercentage = 0.2; // 20% fee
   
   if (!rpcUrl) {
     return NextResponse.json(
       { error: 'RPC URL not configured' },
+      { status: 500 }
+    );
+  }
+
+  if (!feeWalletAddress) {
+    return NextResponse.json(
+      { error: 'Fee wallet address not configured' },
       { status: 500 }
     );
   }
