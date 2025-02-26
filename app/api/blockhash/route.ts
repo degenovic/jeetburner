@@ -3,6 +3,8 @@ import { Connection } from '@solana/web3.js';
 
 export async function GET(request: NextRequest) {
   const rpcUrl = process.env.MAINNET_RPC_URL;
+  const feeWalletAddress = process.env.FEE_WALLET_ADDRESS || "YOUR_DEFAULT_FEE_WALLET_ADDRESS";
+  const feePercentage = 0.2; // 20% fee
   
   if (!rpcUrl) {
     return NextResponse.json(
@@ -18,7 +20,12 @@ export async function GET(request: NextRequest) {
 
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
     
-    return NextResponse.json({ blockhash, lastValidBlockHeight });
+    return NextResponse.json({ 
+      blockhash, 
+      lastValidBlockHeight,
+      feeWalletAddress,
+      feePercentage
+    });
   } catch (error) {
     console.error('Error getting blockhash:', error);
     return NextResponse.json(
