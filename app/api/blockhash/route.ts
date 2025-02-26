@@ -13,6 +13,11 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Ensure URL starts with http:// or https://
+  const validatedUrl = rpcUrl.startsWith('http://') || rpcUrl.startsWith('https://')
+    ? rpcUrl
+    : `https://${rpcUrl}`;
+
   if (!feeWalletAddress) {
     return NextResponse.json(
       { error: 'Fee wallet address not configured' },
@@ -21,7 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const connection = new Connection(rpcUrl, {
+    const connection = new Connection(validatedUrl, {
       commitment: 'confirmed',
     });
 

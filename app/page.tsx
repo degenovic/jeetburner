@@ -100,11 +100,21 @@ function HomeContent() {
 
   const connection = useMemo(() => {
     const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
+    
+    // Validate RPC URL format
     if (!rpcUrl) {
       console.error('RPC URL not configured');
       return new Connection('https://api.mainnet-beta.solana.com');
     }
-    return new Connection(rpcUrl, {
+
+    // Ensure URL starts with http:// or https://
+    const validatedUrl = rpcUrl.startsWith('http://') || rpcUrl.startsWith('https://')
+      ? rpcUrl
+      : `https://${rpcUrl}`;
+
+    console.log('Using RPC URL:', validatedUrl);
+    
+    return new Connection(validatedUrl, {
       commitment: 'confirmed',
       confirmTransactionInitialTimeout: 60000,
     });
