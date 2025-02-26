@@ -3,7 +3,7 @@ import { Connection } from '@solana/web3.js';
 
 export async function GET(request: NextRequest) {
   const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
-  const feeWalletAddress = process.env.FEE_WALLET_ADDRESS;
+  const feeWalletAddress = process.env.NEXT_PUBLIC_FEE_WALLET_ADDRESS || process.env.FEE_WALLET_ADDRESS;
   const feePercentage = 0.2; // 20% fee
   
   if (!rpcUrl) {
