@@ -245,7 +245,7 @@ function HomeContent() {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
-      toast.loading('Please approve the transaction in your wallet. This will close the account and return held rent SOL minus a small support fee.', { id: 'transaction-prep' });
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
       const signed = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signed.serialize());
@@ -318,7 +318,7 @@ function HomeContent() {
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
 
-      toast.loading('Please approve the transaction in your wallet. This will close the account and return held rent SOL minus a small support fee.', { id: 'transaction-prep' });
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
       // This will trigger wallet prompt
       const signedTx = await signTransaction(transaction);
@@ -391,13 +391,13 @@ function HomeContent() {
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
 
-      toast.loading(`Please approve the transaction in your wallet. This will close ${accountsToBurn.length} account(s) and return held rent SOL minus a small support fee.`, { id: 'transaction-prep' });
+      toast.loading(`Please approve the transaction in your wallet. This will close ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
       // Sign and send
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
       
-      toast.loading(`Closing ${accountsToBurn.length} account(s)...`, { id: 'transaction-prep' });
+      toast.loading(`Closing ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'}...`, { id: 'transaction-prep' });
       
       // Confirm transaction
       await connection.confirmTransaction({
@@ -407,7 +407,7 @@ function HomeContent() {
       });
       
       const netAmount = (totalLamports - totalFeeAmount) / LAMPORTS_PER_SOL;
-      toast.success(`Successfully claimed ${accountsToBurn.length} accounts for ${netAmount.toFixed(4)} SOL!`, { id: 'transaction-prep' });
+      toast.success(`Successfully claimed ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'} for ${netAmount.toFixed(4)} SOL!`, { id: 'transaction-prep' });
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
@@ -795,7 +795,6 @@ function HomeContent() {
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="text-white hover:text-white text-sm transition-colors"
-                  style={{ color: 'white', opacity: 1 }}
                 >
                   <span style={{ color: 'white', opacity: 1 }}>View Documentation →</span>
                 </a>
