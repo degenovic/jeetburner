@@ -571,8 +571,8 @@ function HomeContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-4">
-                            <div className="text-sm text-gray-400">
-                              {toSol(account.lamports).toFixed(4)} SOL
+                            <div className="text-sm text-gray-300">
+                              <span className="text-gray-500">~ {(account.lamports / LAMPORTS_PER_SOL).toFixed(3)} SOL</span>
                             </div>
                             {isViewingConnectedWallet && connected && (
                               <button
