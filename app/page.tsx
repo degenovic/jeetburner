@@ -216,6 +216,8 @@ function HomeContent() {
     if (!publicKey || !signTransaction) return;
     
     try {
+      toast.loading('Preparing transaction...', { id: 'transaction-prep' });
+      
       const transaction = new Transaction();
       
       const closeInstruction = spl.createCloseAccountInstruction(
@@ -243,10 +245,12 @@ function HomeContent() {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = publicKey;
       
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return held rent SOL minus a small support fee.', { id: 'transaction-prep' });
+      
       const signed = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signed.serialize());
       
-      toast.loading('Closing account...');
+      toast.loading('Closing account...', { id: 'transaction-prep' });
       
       const confirmation = await connection.confirmTransaction({
         signature,
@@ -259,18 +263,13 @@ function HomeContent() {
       }
       
       const netAmount = account.lamports - feeAmount;
-      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (net of fees)`);
+      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (net of fees)`, { id: 'transaction-prep' });
       
       fetchAccounts(publicKey);
       
     } catch (error: unknown) {
-      console.error('Error burning account:', error);
-      
-      if (error instanceof Error) {
-        toast.error(`Failed to close account: ${error.message}`);
-      } else {
-        toast.error('Failed to close account. Please try again.');
-      }
+      console.error('Error closing account:', error);
+      toast.error('Failed to close account. Please try again.', { id: 'transaction-prep' });
     }
   }, [publicKey, signTransaction, connection, fetchAccounts]);
 
@@ -281,6 +280,8 @@ function HomeContent() {
     }
 
     try {
+      toast.loading('Preparing transaction...', { id: 'transaction-prep' });
+      
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
       // Find the account in our list to get the lamports amount
@@ -317,9 +318,13 @@ function HomeContent() {
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
 
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return held rent SOL minus a small support fee.', { id: 'transaction-prep' });
+      
       // This will trigger wallet prompt
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
+      
+      toast.loading('Closing account...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction({
         signature,
@@ -328,11 +333,11 @@ function HomeContent() {
       });
       
       const netAmount = account.lamports - feeAmount;
-      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`);
+      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Claim error:', error);
-      toast.error('Failed to claim SOL');
+      toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
 
@@ -343,6 +348,8 @@ function HomeContent() {
     }
 
     try {
+      toast.loading('Preparing transaction...', { id: 'transaction-prep' });
+      
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
       // Find the token accounts from the accounts list
@@ -384,9 +391,13 @@ function HomeContent() {
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
 
+      toast.loading(`Please approve the transaction in your wallet. This will close ${accountsToBurn.length} account(s) and return held rent SOL minus a small support fee.`, { id: 'transaction-prep' });
+      
       // Sign and send
       const signedTx = await signTransaction(transaction);
       const signature = await connection.sendRawTransaction(signedTx.serialize());
+      
+      toast.loading(`Closing ${accountsToBurn.length} account(s)...`, { id: 'transaction-prep' });
       
       // Confirm transaction
       await connection.confirmTransaction({
@@ -396,12 +407,12 @@ function HomeContent() {
       });
       
       const netAmount = (totalLamports - totalFeeAmount) / LAMPORTS_PER_SOL;
-      toast.success(`Successfully claimed ${accountsToBurn.length} accounts for ${netAmount.toFixed(4)} SOL!`);
+      toast.success(`Successfully claimed ${accountsToBurn.length} accounts for ${netAmount.toFixed(4)} SOL!`, { id: 'transaction-prep' });
       setSelectedAccounts(new Set());
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
-      toast.error('Failed to claim accounts');
+      toast.error('Failed to claim accounts', { id: 'transaction-prep' });
     }
   }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
 
