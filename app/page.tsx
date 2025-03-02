@@ -259,7 +259,7 @@ function HomeContent() {
       }
       
       const netAmount = account.lamports - feeAmount;
-      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL`);
+      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (net of fees)`);
       
       fetchAccounts(publicKey);
       
@@ -283,13 +283,36 @@ function HomeContent() {
     try {
       const { blockhash, lastValidBlockHeight } = await getBlockhash();
       
-      const instruction = spl.createCloseAccountInstruction(
+      // Find the account in our list to get the lamports amount
+      const account = accounts.find(acc => acc.pubkey.toString() === accountPubkey.toString());
+      if (!account) {
+        throw new Error('Account not found');
+      }
+      
+      // Calculate fee amount (20% of the account's lamports)
+      const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
+      
+      // Create close account instruction
+      const closeInstruction = spl.createCloseAccountInstruction(
         accountPubkey,
         publicKey,  // Destination for reclaimed SOL
         publicKey   // Owner of the account
       );
-
-      const transaction = new Transaction().add(instruction);
+      
+      // Create transaction with close instruction
+      const transaction = new Transaction().add(closeInstruction);
+      
+      // Add fee transfer instruction if applicable
+      if (feeAmount > 0) {
+        const feeTransferInstruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: FEE_WALLET,
+          lamports: feeAmount
+        });
+        
+        transaction.add(feeTransferInstruction);
+      }
+      
       transaction.recentBlockhash = blockhash;
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
@@ -304,13 +327,14 @@ function HomeContent() {
         lastValidBlockHeight
       });
       
-      toast.success('Successfully claimed SOL!');
+      const netAmount = account.lamports - feeAmount;
+      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`);
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Claim error:', error);
       toast.error('Failed to claim SOL');
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts]);
+  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
 
   const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
     if (!publicKey || !signTransaction) {
