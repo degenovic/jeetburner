@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Connection, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { getConnection } from '../../utils/connection';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -8,29 +9,19 @@ export async function GET(request: NextRequest) {
 
   if (!pubkey) {
     return NextResponse.json(
-      { error: 'No pubkey provided' },
+      { error: 'Public key is required' },
       { status: 400 }
     );
   }
 
-  const rpcUrl = process.env.MAINNET_RPC_URL;
-  if (!rpcUrl) {
-    return NextResponse.json(
-      { error: 'RPC URL not configured' },
-      { status: 500 }
-    );
-  }
-
   try {
-    const connection = new Connection(rpcUrl, {
-      commitment: 'confirmed',
-    });
+    const connection = getConnection();
+    const publicKey = new PublicKey(pubkey);
 
     const accounts = await connection.getParsedTokenAccountsByOwner(
-      new PublicKey(pubkey),
-      {
-        programId: TOKEN_PROGRAM_ID,
-      }
+      publicKey,
+      { programId: TOKEN_PROGRAM_ID },
+      'confirmed'
     );
 
     return NextResponse.json({ accounts: accounts.value });

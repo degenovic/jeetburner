@@ -1,29 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { Connection } from '@solana/web3.js';
+import { NextResponse } from 'next/server';
+import { getConnection } from '../../utils/connection';
 
-export async function GET(request: NextRequest) {
-  const rpcUrl = process.env.MAINNET_RPC_URL;
-  
-  if (!rpcUrl) {
-    return NextResponse.json(
-      { error: 'RPC URL not configured' },
-      { status: 500 }
-    );
-  }
-
+export async function GET() {
   try {
-    const connection = new Connection(rpcUrl, {
-      commitment: 'confirmed',
-    });
-
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
-    
+    const connection = getConnection();
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     return NextResponse.json({ blockhash, lastValidBlockHeight });
   } catch (error) {
     console.error('Error getting blockhash:', error);
-    return NextResponse.json(
-      { error: 'Failed to get blockhash' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to get blockhash' }, { status: 500 });
   }
 }

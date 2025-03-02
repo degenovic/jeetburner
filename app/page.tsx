@@ -4,13 +4,14 @@ import { redirect } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Connection, LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, Transaction } from '@solana/web3.js';
 import { createCloseAccountInstruction } from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
 import Header from './components/Header';
 import { Footer } from './components/Footer';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { getConnection } from './utils/connection';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -97,15 +98,7 @@ function HomeContent() {
   }, [searchedPubkey]);
 
   const connection = useMemo(() => {
-    const rpcUrl = process.env.NEXT_PUBLIC_MAINNET_RPC_URL || process.env.MAINNET_RPC_URL;
-    if (!rpcUrl) {
-      console.error('RPC URL not configured');
-      return new Connection('https://api.mainnet-beta.solana.com');
-    }
-    return new Connection(rpcUrl, {
-      commitment: 'confirmed',
-      confirmTransactionInitialTimeout: 60000,
-    });
+    return getConnection();
   }, []);
 
   const fetchAccounts = useCallback(async (key: PublicKey) => {
