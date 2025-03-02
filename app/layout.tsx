@@ -7,17 +7,17 @@ import { Toaster } from 'react-hot-toast'
 const jetbrains = JetBrains_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Pump Token Finder & Claimer',
+  title: 'JeetBurner - Burn Empty Token Accounts',
   description: 'Find and claim empty token accounts on Solana to recover SOL. A tool to help you manage your Solana wallet and reclaim rent from unused token accounts.',
   keywords: 'Solana, Token, Wallet, SOL, Rent, Recovery, Blockchain, Cryptocurrency',
   openGraph: {
-    title: 'Pump Token Finder & Claimer',
+    title: 'JeetBurner - Burn Empty Token Accounts',
     description: 'Find and claim empty token accounts on Solana to recover SOL',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pump Token Finder & Claimer',
+    title: 'JeetBurner - Burn Empty Token Accounts',
     description: 'Find and claim empty token accounts on Solana to recover SOL',
   },
   verification: {
@@ -25,6 +25,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
+    apple: '/favicon.ico',
   },
 }
 
