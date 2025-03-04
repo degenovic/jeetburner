@@ -11,7 +11,7 @@ import Header from './components/Header';
 import { Footer } from './components/Footer';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { getConnection } from './utils/connection';
+import { getConnection, getReliableConnection, markEndpointFailed } from './utils/connection';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -109,107 +109,137 @@ function HomeContent() {
       setSearchError('');
       setHasSearched(true);
       
-      const response = await fetch(`/api/accounts?pubkey=${key.toString()}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch accounts');
-      }
-      
-      const data = await response.json();
-      const accounts = data.accounts;
-      
-      console.log('Total token accounts found:', accounts.length);
-      
-      const emptyAccounts = accounts
-        .filter((account: any) => {
-          const parsedInfo = account.account.data.parsed.info;
-          return parsedInfo.tokenAmount.uiAmount === 0;
-        })
-        .map((account: any) => ({
-          pubkey: new PublicKey(account.pubkey),
-          mint: account.account.data.parsed.info.mint,
-          name: 'Loading...',
-          symbol: '...',
-          lamports: account.account.lamports,
-          image: '',
-        }));
+      try {
+        const response = await fetch(`/api/accounts?wallet=${key.toString()}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch accounts');
+        }
+        
+        const data = await response.json();
+        const accounts = data.accounts;
+        
+        console.log('Total token accounts found:', accounts.length);
+        
+        const emptyAccounts = accounts
+          .filter((account: any) => {
+            const parsedInfo = account.account.data.parsed.info;
+            return parsedInfo.tokenAmount.uiAmount === 0;
+          })
+          .map((account: any) => ({
+            pubkey: new PublicKey(account.pubkey),
+            mint: account.account.data.parsed.info.mint,
+            name: 'Loading...',
+            symbol: '...',
+            lamports: account.account.lamports,
+            image: '',
+          }));
 
-      if (emptyAccounts.length > 0) {
-        try {
-          // Fetch token metadata for all mints
-          const mints = emptyAccounts.map((acc: TokenAccount) => acc.mint).join(',');
-          const metadataResponse = await fetch(`/api/token-metadata?mints=${mints}`);
-          
-          if (!metadataResponse.ok) {
-            throw new Error('Failed to fetch metadata');
-          }
+        if (emptyAccounts.length > 0) {
+          try {
+            // Fetch token metadata for all mints
+            const mints = emptyAccounts.map((acc: TokenAccount) => acc.mint).join(',');
+            const metadataResponse = await fetch(`/api/token-metadata?mints=${mints}`);
+            
+            if (!metadataResponse.ok) {
+              throw new Error('Failed to fetch metadata');
+            }
 
-          const metadata = await metadataResponse.json() as TokenMetadata[];
-          console.log('Metadata response:', metadata);
-          
-          // Update accounts with metadata
-          emptyAccounts.forEach((account: TokenAccount) => {
-            const tokenMetadata = metadata.find(m => m.mint === account.mint);
-            if (tokenMetadata) {
-              account.name = tokenMetadata.name || 'Unknown';
-              account.symbol = tokenMetadata.symbol || '???';
-              account.image = tokenMetadata.image || '';
-            } else {
+            const metadata = await metadataResponse.json() as TokenMetadata[];
+            console.log('Metadata response:', metadata);
+            
+            // Update accounts with metadata
+            emptyAccounts.forEach((account: TokenAccount) => {
+              const tokenMetadata = metadata.find(m => m.mint === account.mint);
+              if (tokenMetadata) {
+                account.name = tokenMetadata.name || 'Unknown';
+                account.symbol = tokenMetadata.symbol || '???';
+                account.image = tokenMetadata.image || '';
+              } else {
+                account.name = 'Unknown';
+                account.symbol = '???';
+                account.image = '';
+              }
+            });
+          } catch (error) {
+            console.error('Error fetching token metadata:', error);
+            // Don't fail the whole operation if metadata fetch fails
+            emptyAccounts.forEach((account: TokenAccount) => {
               account.name = 'Unknown';
               account.symbol = '???';
               account.image = '';
-            }
-          });
-        } catch (error) {
-          console.error('Error fetching token metadata:', error);
-          // Don't fail the whole operation if metadata fetch fails
-          emptyAccounts.forEach((account: TokenAccount) => {
-            account.name = 'Unknown';
-            account.symbol = '???';
-            account.image = '';
-          });
+            });
+          }
+        }
+
+        console.log('Empty accounts found:', emptyAccounts.length);
+        console.log('Empty accounts details:', emptyAccounts);
+        
+        setAccounts(emptyAccounts);
+      } catch (apiError) {
+        console.error('API error fetching accounts:', apiError);
+        
+        // Fallback to direct RPC call if API fails
+        toast.loading('Trying direct connection to Solana network...', { id: 'fetch-accounts' });
+        
+        try {
+          const reliableConnection = await getReliableConnection();
+          const tokenAccounts = await reliableConnection.getParsedTokenAccountsByOwner(
+            key,
+            { programId: TOKEN_PROGRAM_ID }
+          );
+          
+          const emptyAccounts = tokenAccounts.value
+            .filter((account: any) => {
+              const parsedInfo = account.account.data.parsed.info;
+              return parsedInfo.tokenAmount.uiAmount === 0;
+            })
+            .map((account: any) => ({
+              pubkey: new PublicKey(account.pubkey),
+              mint: account.account.data.parsed.info.mint,
+              name: 'Unknown',
+              symbol: '???',
+              lamports: account.account.lamports,
+              image: '',
+            }));
+            
+          console.log('Empty accounts found (direct):', emptyAccounts.length);
+          setAccounts(emptyAccounts);
+          toast.success('Successfully fetched accounts directly from Solana', { id: 'fetch-accounts' });
+        } catch (rpcError) {
+          console.error('Direct RPC error:', rpcError);
+          throw new Error('Failed to fetch accounts through all available methods');
         }
       }
-
-      console.log('Empty accounts found:', emptyAccounts.length);
-      console.log('Empty accounts details:', emptyAccounts);
-      
-      setAccounts(emptyAccounts);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       setSearchError('Failed to fetch accounts. Please try again.');
-      toast.error('Failed to fetch accounts');
+      toast.error('Failed to fetch accounts', { id: 'fetch-accounts' });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const handleSearch = async (key?: string) => {
-    const searchValue = key || searchKey;
-    if (!searchValue) {
-      setSearchError('Please enter a public key');
-      return;
-    }
-
-    try {
-      const pubkey = new PublicKey(searchValue);
-      setSearchError('');
-      setSearchedPubkey(pubkey);
-      setIsViewingConnectedWallet(publicKey ? pubkey.equals(publicKey) : false);
-      setClaimError(null);
-      setHasSearched(true);
-      fetchAccounts(pubkey);
-    } catch (error) {
-      setSearchError('Invalid public key');
-      console.error('Search error:', error);
-    }
-  };
-
   const getBlockhash = async () => {
-    const response = await fetch('/api/blockhash');
-    if (!response.ok) {
-      throw new Error('Failed to get blockhash');
+    try {
+      const response = await fetch('/api/blockhash');
+      if (!response.ok) {
+        throw new Error('Failed to get blockhash');
+      }
+      return response.json();
+    } catch (error) {
+      console.error('Error getting blockhash:', error);
+      toast.error('Error connecting to Solana network. Trying alternative RPC...');
+      
+      // Try to get blockhash directly as a fallback
+      try {
+        const connection = await getReliableConnection();
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        return { blockhash, lastValidBlockHeight };
+      } catch (fallbackError) {
+        console.error('Fallback blockhash error:', fallbackError);
+        throw new Error('Failed to connect to Solana network after multiple attempts');
+      }
     }
-    return response.json();
   };
 
   const burnAccount = useCallback(async (account: TokenAccount) => {
@@ -248,11 +278,17 @@ function HomeContent() {
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
       const signed = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
+      
+      // Get a reliable connection for sending the transaction
+      const reliableConnection = await getReliableConnection();
+      const signature = await reliableConnection.sendRawTransaction(signed.serialize(), {
+        skipPreflight: false,
+        maxRetries: 5
+      });
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
-      const confirmation = await connection.confirmTransaction({
+      const confirmation = await reliableConnection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight
@@ -269,9 +305,44 @@ function HomeContent() {
       
     } catch (error: unknown) {
       console.error('Error closing account:', error);
+      
+      // Mark the endpoint as failed if it's an RPC error
+      if (error instanceof Error && error.message.includes('403')) {
+        const match = error.message.match(/endpoint: (https?:\/\/[^\s]+)/);
+        if (match && match[1]) {
+          markEndpointFailed(match[1]);
+          toast.error('RPC connection error. Trying alternative endpoint...', { id: 'transaction-prep' });
+          
+          // Retry with a different endpoint
+          setTimeout(() => burnAccount(account), 1000);
+          return;
+        }
+      }
+      
       toast.error('Failed to close account. Please try again.', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts]);
+  }, [publicKey, signTransaction, fetchAccounts]);
+
+  const handleSearch = async (key?: string) => {
+    const searchValue = key || searchKey;
+    if (!searchValue) {
+      setSearchError('Please enter a public key');
+      return;
+    }
+
+    try {
+      const pubkey = new PublicKey(searchValue);
+      setSearchError('');
+      setSearchedPubkey(pubkey);
+      setIsViewingConnectedWallet(publicKey ? pubkey.equals(publicKey) : false);
+      setClaimError(null);
+      setHasSearched(true);
+      fetchAccounts(pubkey);
+    } catch (error) {
+      setSearchError('Invalid public key');
+      console.error('Search error:', error);
+    }
+  };
 
   const handleBurnSingle = useCallback(async (accountPubkey: PublicKey) => {
     if (!publicKey || !signTransaction) {
@@ -322,11 +393,17 @@ function HomeContent() {
       
       // This will trigger wallet prompt
       const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      
+      // Get a reliable connection for sending the transaction
+      const reliableConnection = await getReliableConnection();
+      const signature = await reliableConnection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        maxRetries: 5
+      });
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
-      await connection.confirmTransaction({
+      await reliableConnection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight
@@ -337,9 +414,23 @@ function HomeContent() {
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Claim error:', error);
+      
+      // Mark the endpoint as failed if it's an RPC error
+      if (error instanceof Error && error.message.includes('403')) {
+        const match = error.message.match(/endpoint: (https?:\/\/[^\s]+)/);
+        if (match && match[1]) {
+          markEndpointFailed(match[1]);
+          toast.error('RPC connection error. Trying alternative endpoint...', { id: 'transaction-prep' });
+          
+          // Retry with a different endpoint
+          setTimeout(() => handleBurnSingle(accountPubkey), 1000);
+          return;
+        }
+      }
+      
       toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
+  }, [publicKey, signTransaction, fetchAccounts, accounts]);
 
   const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
     if (!publicKey || !signTransaction) {
@@ -395,12 +486,18 @@ function HomeContent() {
       
       // Sign and send
       const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      
+      // Get a reliable connection for sending the transaction
+      const reliableConnection = await getReliableConnection();
+      const signature = await reliableConnection.sendRawTransaction(signedTx.serialize(), {
+        skipPreflight: false,
+        maxRetries: 5
+      });
       
       toast.loading(`Closing ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'}...`, { id: 'transaction-prep' });
       
       // Confirm transaction
-      await connection.confirmTransaction({
+      await reliableConnection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight
@@ -412,9 +509,23 @@ function HomeContent() {
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
+      
+      // Mark the endpoint as failed if it's an RPC error
+      if (error instanceof Error && error.message.includes('403')) {
+        const match = error.message.match(/endpoint: (https?:\/\/[^\s]+)/);
+        if (match && match[1]) {
+          markEndpointFailed(match[1]);
+          toast.error('RPC connection error. Trying alternative endpoint...', { id: 'transaction-prep' });
+          
+          // Retry with a different endpoint
+          setTimeout(() => handleBurnMultiple(accountsToBurn), 1000);
+          return;
+        }
+      }
+      
       toast.error('Failed to claim accounts', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
+  }, [publicKey, signTransaction, fetchAccounts, accounts]);
 
   const handleBurnAttempt = useCallback(async () => {
     if (!publicKey || !signTransaction) {
