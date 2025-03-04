@@ -1,15 +1,14 @@
-import { Connection, type Commitment, type ConnectionConfig } from '@solana/web3.js';
+import { Connection, type Commitment } from '@solana/web3.js';
 
 export function getRpcUrl(): string {
-  const apiKey = process.env.NEXT_PUBLIC_HELIUS_API_KEY;
-  if (!apiKey) throw new Error('Missing HELIUS_API_KEY in environment variables');
-  return `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
+  const endpoint = process.env.NEXT_PUBLIC_MAINNET_RPC_URL;
+  if (!endpoint) throw new Error('Missing NEXT_PUBLIC_MAINNET_RPC_URL in environment variables');
+  return endpoint;
 }
 
 export const connection = new Connection(getRpcUrl(), {
   commitment: 'confirmed' as Commitment,
   httpHeaders: {
     'Content-Type': 'application/json',
-    'Helius-Request-Source': 'jeetburner-app'
   }
 });
