@@ -22,7 +22,7 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <Logo size={36} />
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text">solbeer.money</span>
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text"></span>
           </Link>
         </div>
       </div>
