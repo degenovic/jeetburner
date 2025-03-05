@@ -446,7 +446,7 @@ function HomeContent() {
             {/* Main Heading */}
             <div className="text-center mb-8">
               <p className="text-white text-2xl" style={{ marginTop: '15px' }}>
-                Find and burn rugged accounts to get SOL back
+                Find and burn empty token accounts to get SOL back
               </p>
               <div className="flex justify-center">
                 <button 
@@ -523,7 +523,7 @@ function HomeContent() {
               <div className="w-full max-w-4xl">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold">
-                    Rugged Accounts ({accounts.length})
+                    Empty Accounts ({accounts.length})
                   </h3>
                   <div className="text-right">
                     <p className="text-sm text-gray-400">Total Reclaimable:</p>
