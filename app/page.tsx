@@ -639,7 +639,7 @@ function HomeContent() {
               <div className="space-y-8 relative" style={{ zIndex: 10, isolation: 'isolate' }}>
                 <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🤔 What is Rent Recovery?
+                  🤔 How does it work?
                   </h3>
                   <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
