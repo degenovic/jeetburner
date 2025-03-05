@@ -1,4 +1,4 @@
-import { Transaction, Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
+import { TransactionInstruction, Connection } from '@solana/web3.js';
 
 export const getProvider = () => {
   if ('phantom' in window) {
@@ -16,34 +16,21 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create transaction with empty instructions first
-    const transaction = new Transaction();
-    
-    // Get latest blockhash
-    const { blockhash } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = provider.publicKey;
-
-    // Add dummy instruction to reserve space (will be replaced by Phantom)
-    transaction.add({
-      keys: [],
-      programId: PublicKey.default,
-      data: Buffer.alloc(600), // Reserve 600 bytes for Lighthouse
-    });
-
-    // Add our actual instructions
-    instructions.forEach(instruction => transaction.add(instruction));
-
-    // Send with Phantom's recommended options
-    const { signature } = await provider.signAndSendTransaction(transaction, {
-      skipPreflight: false,
-      preflightCommitment: 'confirmed',
-      maxRetries: 3,
+    // Phantom will create the transaction with proper space if we just pass instructions
+    const { signature } = await provider.signAndSendTransaction({
+      instructions,
+      options: {
+        skipPreflight: false,
+        preflightCommitment: 'confirmed',
+        maxRetries: 3,
+        // Explicitly tell Phantom to add security checks
+        securityGuard: true  
+      }
     });
     
     return signature;
   } catch (error) {
-    console.error('Error signing and sending transaction:', error);
+    console.error('Transaction failed:', error);
     throw error;
   }
 };
