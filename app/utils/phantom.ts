@@ -1,4 +1,4 @@
-import { TransactionInstruction, Connection } from '@solana/web3.js';
+import { Transaction, TransactionInstruction, Connection } from '@solana/web3.js';
 
 export const getProvider = () => {
   if ('phantom' in window) {
@@ -16,17 +16,15 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Phantom will create the transaction with proper space if we just pass instructions
-    const { signature } = await provider.signAndSendTransaction({
-      instructions,
-      options: {
-        skipPreflight: false,
-        preflightCommitment: 'confirmed',
-        maxRetries: 3,
-        // Explicitly tell Phantom to add security checks
-        securityGuard: true  
-      }
-    });
+    // Create a transaction but don't set blockhash or feePayer
+    // This leaves it "unsigned" for Phantom to handle
+    const transaction = new Transaction();
+    
+    // Add instructions
+    instructions.forEach(instruction => transaction.add(instruction));
+    
+    // Let Phantom handle the rest (blockhash, feePayer, signing)
+    const { signature } = await provider.signAndSendTransaction(transaction);
     
     return signature;
   } catch (error) {
