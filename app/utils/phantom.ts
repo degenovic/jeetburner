@@ -15,10 +15,12 @@ export const signAndSendTransaction = async (
   instructions: TransactionInstruction[]
 ) => {
   try {
-    // Let Phantom create and handle the transaction
-    const { signature } = await provider.signAndSendTransaction({
-      instructions
-    });
+    // Create a new transaction and add instructions
+    const transaction = new Transaction();
+    instructions.forEach(instruction => transaction.add(instruction));
+    
+    // Let Phantom handle the rest (blockhash, signing, etc)
+    const { signature } = await provider.signAndSendTransaction(transaction);
     return signature;
   } catch (error) {
     console.error('Error signing and sending transaction:', error);
