@@ -230,7 +230,7 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
-      // Create instructions array for closing the account
+      // Create instructions array
       const instructions = [
         // Close account instruction
         spl.createCloseAccountInstruction(
@@ -239,26 +239,28 @@ function HomeContent() {
           publicKey   // Owner of the account
         )
       ];
-
-      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL.', { id: 'transaction-prep' });
       
-      // Send the transaction to close the account
+      // Add fee transfer instruction if applicable
+      if (feeAmount > 0) {
+        instructions.push(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: FEE_WALLET,
+            lamports: feeAmount
+          })
+        );
+      }
+
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
+      
       const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
       
-      // Record the fee in the UI but don't collect it via transaction
-      // This avoids the "potentially malicious" warning
       const netAmount = account.lamports - feeAmount;
-      
-      // Display success message with fee information
-      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL! (20% fee applied)`, { id: 'transaction-prep' });
-      
-      // Optional: Record the fee collection for later processing
-      console.log(`Fee of ${(feeAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL should be collected from ${publicKey.toString()}`);
-      
+      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Claim error:', error);
@@ -288,7 +290,7 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Create instructions array for closing accounts
+      // Create instructions array
       const instructions = tokenAccountsToBurn.map(account => 
         spl.createCloseAccountInstruction(
           account.pubkey,
@@ -297,26 +299,28 @@ function HomeContent() {
         )
       );
       
-      const numAccounts = tokenAccountsToBurn.length;
-      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL.`, { id: 'transaction-prep' });
+      // Add fee transfer instruction if applicable
+      if (totalFeeAmount > 0) {
+        instructions.push(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: FEE_WALLET,
+            lamports: totalFeeAmount
+          })
+        );
+      }
       
-      // Send the transaction to close accounts
+      const numAccounts = tokenAccountsToBurn.length;
+      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
+      
       const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
       
-      // Record the fee in the UI but don't collect it via transaction
-      // This avoids the "potentially malicious" warning
       const netAmount = totalLamports - totalFeeAmount;
-      
-      // Display success message with fee information
-      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL! (20% fee applied)`, { id: 'transaction-prep' });
-      
-      // Optional: Record the fee collection for later processing
-      console.log(`Fee of ${(totalFeeAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL should be collected from ${publicKey.toString()}`);
-      
+      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
