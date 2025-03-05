@@ -12,14 +12,20 @@ export const getProvider = () => {
 
 export const signAndSendTransaction = async (
   provider: any,
-  instructions: TransactionInstruction[]
+  instructions: TransactionInstruction[],
+  connection: Connection
 ) => {
   try {
     // Create a new transaction and add instructions
     const transaction = new Transaction();
     instructions.forEach(instruction => transaction.add(instruction));
     
-    // Let Phantom handle the rest (blockhash, signing, etc)
+    // Get latest blockhash
+    const { blockhash } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = provider.publicKey;
+    
+    // Let Phantom handle the rest (signing, etc)
     const { signature } = await provider.signAndSendTransaction(transaction);
     return signature;
   } catch (error) {

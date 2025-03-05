@@ -253,7 +253,7 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      const signature = await signAndSendTransaction(provider, instructions);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -313,7 +313,7 @@ function HomeContent() {
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      const signature = await signAndSendTransaction(provider, instructions);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
