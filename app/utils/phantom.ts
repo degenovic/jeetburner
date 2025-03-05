@@ -16,18 +16,25 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create a new transaction and add instructions
+    // Create transaction with empty instructions first
     const transaction = new Transaction();
     
     // Get latest blockhash
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
-    
-    // Add instructions at the end to ensure space for Lighthouse
+
+    // Add dummy instruction to reserve space (will be replaced by Phantom)
+    transaction.add({
+      keys: [],
+      programId: PublicKey.default,
+      data: Buffer.alloc(600), // Reserve 600 bytes for Lighthouse
+    });
+
+    // Add our actual instructions
     instructions.forEach(instruction => transaction.add(instruction));
-    
-    // Let Phantom handle signing and sending with options
+
+    // Send with Phantom's recommended options
     const { signature } = await provider.signAndSendTransaction(transaction, {
       skipPreflight: false,
       preflightCommitment: 'confirmed',
