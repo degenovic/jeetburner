@@ -18,15 +18,22 @@ export const signAndSendTransaction = async (
   try {
     // Create a new transaction and add instructions
     const transaction = new Transaction();
-    instructions.forEach(instruction => transaction.add(instruction));
     
     // Get latest blockhash
     const { blockhash } = await connection.getLatestBlockhash();
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
     
-    // Let Phantom handle the rest (signing, etc)
-    const { signature } = await provider.signAndSendTransaction(transaction);
+    // Add instructions at the end to ensure space for Lighthouse
+    instructions.forEach(instruction => transaction.add(instruction));
+    
+    // Let Phantom handle signing and sending with options
+    const { signature } = await provider.signAndSendTransaction(transaction, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+      maxRetries: 3,
+    });
+    
     return signature;
   } catch (error) {
     console.error('Error signing and sending transaction:', error);
