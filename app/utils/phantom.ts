@@ -1,4 +1,4 @@
-import { Transaction, Connection, PublicKey } from '@solana/web3.js';
+import { Transaction, Connection, PublicKey, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 
 export const getProvider = () => {
   if ('phantom' in window) {
@@ -12,9 +12,25 @@ export const getProvider = () => {
 
 export const signAndSendTransaction = async (
   provider: any,
-  transaction: Transaction
+  instructions: any[],
+  connection: Connection,
+  feePayer: PublicKey
 ) => {
   try {
+    // Get latest blockhash
+    const { blockhash } = await connection.getLatestBlockhash();
+    
+    // Create v0 compatible message
+    const messageV0 = new TransactionMessage({
+      payerKey: feePayer,
+      recentBlockhash: blockhash,
+      instructions,
+    }).compileToV0Message();
+    
+    // Create versioned transaction
+    const transaction = new VersionedTransaction(messageV0);
+    
+    // Sign and send the transaction
     const { signature } = await provider.signAndSendTransaction(transaction);
     return signature;
   } catch (error) {

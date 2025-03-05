@@ -220,7 +220,6 @@ function HomeContent() {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
       const provider = getProvider();
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
       // Find the account in our list to get the lamports amount
       const account = accounts.find(acc => acc.pubkey.toString() === accountPubkey.toString());
@@ -231,43 +230,34 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
-      // Create close account instruction
-      const closeInstruction = spl.createCloseAccountInstruction(
-        accountPubkey,
-        publicKey,  // Destination for reclaimed SOL
-        publicKey   // Owner of the account
-      );
-      
-      // Create transaction with close instruction
-      const transaction = new Transaction();
-      transaction.add(closeInstruction);
+      // Create instructions array
+      const instructions = [
+        // Close account instruction
+        spl.createCloseAccountInstruction(
+          accountPubkey,
+          publicKey,  // Destination for reclaimed SOL
+          publicKey   // Owner of the account
+        )
+      ];
       
       // Add fee transfer instruction if applicable
       if (feeAmount > 0) {
-        const feeTransferInstruction = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: FEE_WALLET,
-          lamports: feeAmount
-        });
-        
-        transaction.add(feeTransferInstruction);
+        instructions.push(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: FEE_WALLET,
+            lamports: feeAmount
+          })
+        );
       }
-      
-      transaction.recentBlockhash = blockhash;
-      transaction.lastValidBlockHeight = lastValidBlockHeight;
-      transaction.feePayer = publicKey;
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      const signature = await signAndSendTransaction(provider, transaction);
+      const signature = await signAndSendTransaction(provider, instructions, connection, publicKey);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
+      await connection.confirmTransaction(signature);
       
       const netAmount = account.lamports - feeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
@@ -288,7 +278,6 @@ function HomeContent() {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
       const provider = getProvider();
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
       // Find the token accounts from the accounts list
       const tokenAccountsToBurn = accounts.filter(acc => 
@@ -301,45 +290,34 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Create transaction
-      const transaction = new Transaction();
-      
-      // Add close instructions for each account
-      tokenAccountsToBurn.forEach(account => {
-        const closeInstruction = spl.createCloseAccountInstruction(
+      // Create instructions array
+      const instructions = tokenAccountsToBurn.map(account => 
+        spl.createCloseAccountInstruction(
           account.pubkey,
           publicKey,  // Destination for reclaimed SOL
           publicKey   // Owner of the account
-        );
-        transaction.add(closeInstruction);
-      });
+        )
+      );
       
       // Add fee transfer instruction if applicable
       if (totalFeeAmount > 0) {
-        const feeTransferInstruction = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: FEE_WALLET,
-          lamports: totalFeeAmount
-        });
-        transaction.add(feeTransferInstruction);
+        instructions.push(
+          SystemProgram.transfer({
+            fromPubkey: publicKey,
+            toPubkey: FEE_WALLET,
+            lamports: totalFeeAmount
+          })
+        );
       }
-      
-      transaction.recentBlockhash = blockhash;
-      transaction.lastValidBlockHeight = lastValidBlockHeight;
-      transaction.feePayer = publicKey;
       
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      const signature = await signAndSendTransaction(provider, transaction);
+      const signature = await signAndSendTransaction(provider, instructions, connection, publicKey);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
+      await connection.confirmTransaction(signature);
       
       const netAmount = totalLamports - totalFeeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
