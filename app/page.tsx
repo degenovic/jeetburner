@@ -29,13 +29,13 @@ interface TokenMetadata {
   image: string;
 }
 
-const TOKEN_PROGRAM_ID = new PublicKey('Gg6F31r9z2EHvC9vCpRJq6rWVr3vzmgW3zqFNSWcX5uq');
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const FEE_WALLET = new PublicKey('8rWPyC5Y9LXFjFkiEw7CtgxCjq1JDeXXV5zv4do1VW1j');
 const FEE_PERCENTAGE = 0.2; // 20%
 
 function HomeContent() {
   const searchParams = useSearchParams();
-  const { publicKey, signTransaction, connected } = useWallet();
+  const { publicKey, connected } = useWallet();
   const [accounts, setAccounts] = useState<TokenAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchKey, setSearchKey] = useState('');
@@ -208,69 +208,77 @@ function HomeContent() {
     return response.json();
   };
 
+  const getProvider = () => {
+    if ('phantom' in window) {
+      const provider = (window as any).phantom?.solana;
+      if (provider?.isPhantom) {
+        return provider;
+      }
+    }
+    throw new Error('Phantom wallet not found!');
+  };
+
   const burnAccount = useCallback(async (account: TokenAccount) => {
-    if (!publicKey || !signTransaction) return;
+    if (!publicKey || !connected) return;
     
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
-      const transaction = new Transaction();
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
-      const closeInstruction = spl.createCloseAccountInstruction(
-        new PublicKey(account.pubkey), // Token account to close
-        publicKey,                      // Destination for rent SOL
-        publicKey,                      // Authority
-        []                             // No multisig
-      );
-      
-      transaction.add(closeInstruction);
-      
+      // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
+      // Create close account instruction
+      const closeInstruction = spl.createCloseAccountInstruction(
+        account.pubkey,
+        publicKey,  // Destination for reclaimed SOL
+        publicKey   // Owner of the account
+      );
+      
+      // Create transaction
+      const transaction = new Transaction();
+      transaction.add(closeInstruction);
+      
+      // Add fee transfer instruction if applicable
       if (feeAmount > 0) {
-        const transferInstruction = SystemProgram.transfer({
+        const feeTransferInstruction = SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: FEE_WALLET,
           lamports: feeAmount
         });
-        
-        transaction.add(transferInstruction);
+        transaction.add(feeTransferInstruction);
       }
       
-      const { blockhash, lastValidBlockHeight } = await getBlockhash();
       transaction.recentBlockhash = blockhash;
+      transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
       
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      const signed = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signed.serialize());
+      // Use Phantom's signAndSendTransaction
+      const provider = getProvider();
+      const { signature } = await provider.signAndSendTransaction(transaction);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
-      const confirmation = await connection.confirmTransaction({
+      await connection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight
       });
       
-      if (confirmation.value.err) {
-        throw new Error('Failed to confirm transaction');
-      }
-      
       const netAmount = account.lamports - feeAmount;
       toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (net of fees)`, { id: 'transaction-prep' });
-      
       fetchAccounts(publicKey);
-      
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error closing account:', error);
       toast.error('Failed to close account. Please try again.', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts]);
+  }, [publicKey, connected, connection, fetchAccounts]);
 
   const handleBurnSingle = useCallback(async (accountPubkey: PublicKey) => {
-    if (!publicKey || !signTransaction) {
+    if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -278,6 +286,7 @@ function HomeContent() {
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
+      const provider = getProvider();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
       // Find the account in our list to get the lamports amount
@@ -297,7 +306,8 @@ function HomeContent() {
       );
       
       // Create transaction with close instruction
-      const transaction = new Transaction().add(closeInstruction);
+      const transaction = new Transaction();
+      transaction.add(closeInstruction);
       
       // Add fee transfer instruction if applicable
       if (feeAmount > 0) {
@@ -316,9 +326,8 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      // This will trigger wallet prompt
-      const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      // Use Phantom's signAndSendTransaction
+      const { signature } = await provider.signAndSendTransaction(transaction);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -335,10 +344,10 @@ function HomeContent() {
       console.error('Claim error:', error);
       toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
+  }, [publicKey, connected, connection, fetchAccounts, accounts]);
 
   const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
-    if (!publicKey || !signTransaction) {
+    if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
       return;
     }
@@ -346,6 +355,7 @@ function HomeContent() {
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
+      const provider = getProvider();
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
       
       // Find the token accounts from the accounts list
@@ -359,68 +369,65 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Create instructions for all accounts
-      const closeInstructions = accountsToBurn.map(accountPubkey => 
-        spl.createCloseAccountInstruction(
-          new PublicKey(accountPubkey),
-          publicKey,
-          publicKey
-        )
-      );
-
-      // Create fee transfer instruction (if applicable)
-      const instructions = [...closeInstructions];
+      // Create transaction
+      const transaction = new Transaction();
       
+      // Add close instructions for each account
+      tokenAccountsToBurn.forEach(account => {
+        const closeInstruction = spl.createCloseAccountInstruction(
+          account.pubkey,
+          publicKey,  // Destination for reclaimed SOL
+          publicKey   // Owner of the account
+        );
+        transaction.add(closeInstruction);
+      });
+      
+      // Add fee transfer instruction if applicable
       if (totalFeeAmount > 0) {
         const feeTransferInstruction = SystemProgram.transfer({
           fromPubkey: publicKey,
           toPubkey: FEE_WALLET,
           lamports: totalFeeAmount
         });
-        
-        instructions.push(feeTransferInstruction);
+        transaction.add(feeTransferInstruction);
       }
-
-      // Create single transaction with all instructions
-      const transaction = new Transaction().add(...instructions);
+      
       transaction.recentBlockhash = blockhash;
       transaction.lastValidBlockHeight = lastValidBlockHeight;
       transaction.feePayer = publicKey;
-
-      toast.loading(`Please approve the transaction in your wallet. This will close ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      // Sign and send
-      const signedTx = await signTransaction(transaction);
-      const signature = await connection.sendRawTransaction(signedTx.serialize());
+      const numAccounts = tokenAccountsToBurn.length;
+      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      toast.loading(`Closing ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'}...`, { id: 'transaction-prep' });
+      // Use Phantom's signAndSendTransaction
+      const { signature } = await provider.signAndSendTransaction(transaction);
       
-      // Confirm transaction
+      toast.loading('Closing accounts...', { id: 'transaction-prep' });
+      
       await connection.confirmTransaction({
         signature,
         blockhash,
         lastValidBlockHeight
       });
       
-      const netAmount = (totalLamports - totalFeeAmount) / LAMPORTS_PER_SOL;
-      toast.success(`Successfully claimed ${accountsToBurn.length === 1 ? 'the account' : accountsToBurn.length + ' accounts'} for ${netAmount.toFixed(4)} SOL!`, { id: 'transaction-prep' });
-      setSelectedAccounts(new Set());
+      const netAmount = totalLamports - totalFeeAmount;
+      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
-      toast.error('Failed to claim accounts', { id: 'transaction-prep' });
+      toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
-  }, [publicKey, signTransaction, connection, fetchAccounts, accounts]);
+  }, [publicKey, connected, connection, fetchAccounts, accounts]);
 
   const handleBurnAttempt = useCallback(async () => {
-    if (!publicKey || !signTransaction) {
+    if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
       return;
     }
 
     setClaimError(null);
     handleBurnMultiple(Array.from(selectedAccounts));
-  }, [publicKey, signTransaction, selectedAccounts, handleBurnMultiple]);
+  }, [publicKey, connected, selectedAccounts, handleBurnMultiple]);
 
   const truncateAddress = (address: string, startLength = 4, endLength = 4) => {
     if (!address) return '';
@@ -648,7 +655,7 @@ function HomeContent() {
                   <p className="text-white mt-4">
                     Learn more about rent on Solana {' '}
                     <a 
-                      href="https://solana.com/docs/core/accounts#rent" 
+                      href="https://spl_governance.crsp.solutions/" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-pink-500 hover:text-pink-400 underline"
