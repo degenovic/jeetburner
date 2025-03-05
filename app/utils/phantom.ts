@@ -1,4 +1,4 @@
-import { Transaction, TransactionInstruction, Connection } from '@solana/web3.js';
+import { Transaction, TransactionInstruction, Connection, PublicKey } from '@solana/web3.js';
 
 export const getProvider = () => {
   if ('phantom' in window) {
@@ -16,14 +16,27 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create a transaction but don't set blockhash or feePayer
-    // This leaves it "unsigned" for Phantom to handle
+    // Create a transaction
     const transaction = new Transaction();
     
-    // Add instructions
+    // Get latest blockhash
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = provider.publicKey;
+    
+    // Add instructions - leave space at the beginning for Lighthouse
+    // Add a dummy instruction that Phantom can replace with security checks
+    const dummyInstruction = new TransactionInstruction({
+      keys: [],
+      programId: PublicKey.default,
+      data: Buffer.from([])
+    });
+    
+    // Add dummy instruction first, then our actual instructions
+    transaction.add(dummyInstruction);
     instructions.forEach(instruction => transaction.add(instruction));
     
-    // Let Phantom handle the rest (blockhash, feePayer, signing)
+    // Send to Phantom WITHOUT signing it ourselves
     const { signature } = await provider.signAndSendTransaction(transaction);
     
     return signature;
