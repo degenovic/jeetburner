@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletContextState } from '@solana/wallet-adapter-react';
+import { getProvider, signAndSendTransaction } from './utils/phantom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
@@ -208,75 +210,6 @@ function HomeContent() {
     return response.json();
   };
 
-  const getProvider = () => {
-    if ('phantom' in window) {
-      const provider = (window as any).phantom?.solana;
-      if (provider?.isPhantom) {
-        return provider;
-      }
-    }
-    throw new Error('Phantom wallet not found!');
-  };
-
-  const burnAccount = useCallback(async (account: TokenAccount) => {
-    if (!publicKey || !connected) return;
-    
-    try {
-      toast.loading('Preparing transaction...', { id: 'transaction-prep' });
-      
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      
-      // Calculate fee amount (20% of the account's lamports)
-      const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
-      
-      // Create close account instruction
-      const closeInstruction = spl.createCloseAccountInstruction(
-        account.pubkey,
-        publicKey,  // Destination for reclaimed SOL
-        publicKey   // Owner of the account
-      );
-      
-      // Create transaction
-      const transaction = new Transaction();
-      transaction.add(closeInstruction);
-      
-      // Add fee transfer instruction if applicable
-      if (feeAmount > 0) {
-        const feeTransferInstruction = SystemProgram.transfer({
-          fromPubkey: publicKey,
-          toPubkey: FEE_WALLET,
-          lamports: feeAmount
-        });
-        transaction.add(feeTransferInstruction);
-      }
-      
-      transaction.recentBlockhash = blockhash;
-      transaction.lastValidBlockHeight = lastValidBlockHeight;
-      transaction.feePayer = publicKey;
-      
-      toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
-      
-      // Use Phantom's signAndSendTransaction
-      const provider = getProvider();
-      const { signature } = await provider.signAndSendTransaction(transaction);
-      
-      toast.loading('Closing account...', { id: 'transaction-prep' });
-      
-      await connection.confirmTransaction({
-        signature,
-        blockhash,
-        lastValidBlockHeight
-      });
-      
-      const netAmount = account.lamports - feeAmount;
-      toast.success(`Successfully closed account and reclaimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL (net of fees)`, { id: 'transaction-prep' });
-      fetchAccounts(publicKey);
-    } catch (error) {
-      console.error('Error closing account:', error);
-      toast.error('Failed to close account. Please try again.', { id: 'transaction-prep' });
-    }
-  }, [publicKey, connected, connection, fetchAccounts]);
-
   const handleBurnSingle = useCallback(async (accountPubkey: PublicKey) => {
     if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
@@ -326,8 +259,7 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      // Use Phantom's signAndSendTransaction
-      const { signature } = await provider.signAndSendTransaction(transaction);
+      const signature = await signAndSendTransaction(provider, transaction);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -399,8 +331,7 @@ function HomeContent() {
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      // Use Phantom's signAndSendTransaction
-      const { signature } = await provider.signAndSendTransaction(transaction);
+      const signature = await signAndSendTransaction(provider, transaction);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
