@@ -260,8 +260,7 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      // Use signAndSendTransaction with Lighthouse protection enabled
-      const signature = await signAndSendTransaction(provider, instructions, connection, true);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -272,22 +271,7 @@ function HomeContent() {
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Claim error:', error);
-      
-      // Handle specific error types
-      let errorMessage = 'Failed to claim SOL';
-      
-      // Type check the error before accessing properties
-      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-        // Check for Lighthouse security rejection
-        if (error.message.includes('Transaction simulation failed') || 
-            error.message.includes('Lighthouse') ||
-            error.message.includes('security check') ||
-            error.message.includes('assertion failed')) {
-          errorMessage = 'Transaction rejected by security check. This could be due to a potential security issue. Please try again or contact support.';
-        }
-      }
-      
-      toast.error(errorMessage, { id: 'transaction-prep' });
+      toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
   }, [publicKey, connected, connection, fetchAccounts, accounts]);
 
@@ -340,11 +324,11 @@ function HomeContent() {
           })
         );
       }
-
-      toast.loading(`Please approve the transaction in your wallet. This will close ${tokenAccountsToBurn.length} ${tokenAccountsToBurn.length === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      // Use signAndSendTransaction with Lighthouse protection enabled
-      const signature = await signAndSendTransaction(provider, instructions, connection, true);
+      const numAccounts = tokenAccountsToBurn.length;
+      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
+      
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
@@ -355,22 +339,7 @@ function HomeContent() {
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
-      
-      // Handle specific error types
-      let errorMessage = 'Failed to claim SOL';
-      
-      // Type check the error before accessing properties
-      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
-        // Check for Lighthouse security rejection
-        if (error.message.includes('Transaction simulation failed') || 
-            error.message.includes('Lighthouse') ||
-            error.message.includes('security check') ||
-            error.message.includes('assertion failed')) {
-          errorMessage = 'Transaction rejected by security check. This could be due to a potential security issue. Please try again or contact support.';
-        }
-      }
-      
-      toast.error(errorMessage, { id: 'transaction-prep' });
+      toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
   }, [publicKey, connected, connection, fetchAccounts, accounts]);
 
