@@ -16,20 +16,19 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create a proper Transaction object
+    // Create a new transaction
     const transaction = new Transaction();
+    
+    // Add all instructions to the transaction
+    instructions.forEach(instruction => transaction.add(instruction));
     
     // Get recent blockhash
     const { blockhash } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
     
-    // Add instructions
-    instructions.forEach(instruction => transaction.add(instruction));
-    
     // Send transaction
     const { signature } = await provider.signAndSendTransaction(transaction);
-    
     return signature;
   } catch (error) {
     console.error('Transaction failed:', error);
