@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletContextState } from '@solana/wallet-adapter-react';
-import { getProvider } from './utils/phantom';
+import { getProvider, signAndSendTransaction } from './utils/phantom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
@@ -253,16 +253,7 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      // Create a new transaction and add all instructions
-      const transaction = new Transaction().add(...instructions);
-      
-      // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = provider.publicKey;
-      
-      // Use Phantom's signAndSendTransaction directly
-      const { signature } = await provider.signAndSendTransaction(transaction);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -322,16 +313,7 @@ function HomeContent() {
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      // Create a new transaction and add all instructions
-      const transaction = new Transaction().add(...instructions);
-      
-      // Get recent blockhash
-      const { blockhash } = await connection.getLatestBlockhash('confirmed');
-      transaction.recentBlockhash = blockhash;
-      transaction.feePayer = provider.publicKey;
-      
-      // Use Phantom's signAndSendTransaction directly
-      const { signature } = await provider.signAndSendTransaction(transaction);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       

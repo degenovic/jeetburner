@@ -17,16 +17,18 @@ export const signAndSendTransaction = async (
 ) => {
   try {
     // Create a new transaction
-    const transaction = new Transaction().add(...instructions);
+    const transaction = new Transaction();
+    
+    // Add all instructions to the transaction
+    instructions.forEach(instruction => transaction.add(instruction));
     
     // Get recent blockhash
     const { blockhash } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
     
-    // Send transaction exactly as shown in Phantom docs
+    // Send transaction
     const { signature } = await provider.signAndSendTransaction(transaction);
-    
     return signature;
   } catch (error) {
     console.error('Transaction failed:', error);
