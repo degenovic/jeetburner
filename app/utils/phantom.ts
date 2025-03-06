@@ -16,19 +16,21 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create a new transaction
-    const transaction = new Transaction();
-    
-    // Add all instructions to the transaction
-    instructions.forEach(instruction => transaction.add(instruction));
-    
     // Get recent blockhash
     const { blockhash } = await connection.getLatestBlockhash('confirmed');
-    transaction.recentBlockhash = blockhash;
-    transaction.feePayer = provider.publicKey;
     
-    // Send transaction
-    const { signature } = await provider.signAndSendTransaction(transaction);
+    // Create a minimal transaction object with just the required fields
+    // This approach gives Phantom maximum control and space for Lighthouse
+    const transactionPayload = {
+      instructions: instructions,
+      recentBlockhash: blockhash,
+      feePayer: provider.publicKey
+    };
+    
+    // Send transaction using the payload directly
+    // This allows Phantom to construct the final transaction with security guards
+    const { signature } = await provider.signAndSendTransaction(transactionPayload);
+    
     return signature;
   } catch (error) {
     console.error('Transaction failed:', error);
