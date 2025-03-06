@@ -1,13 +1,27 @@
 import { Transaction, TransactionInstruction, Connection, PublicKey } from '@solana/web3.js';
 
+// Add TypeScript declaration for window.solana
+declare global {
+  interface Window {
+    solana?: any;
+  }
+}
+
 export const getProvider = () => {
+  // Check for Phantom in the window object
   if ('phantom' in window) {
     const provider = (window as any).phantom?.solana;
     if (provider?.isPhantom) {
       return provider;
     }
   }
-  throw new Error('Phantom wallet not found!');
+  
+  // Check for Solana in the window object (alternate detection method)
+  if (window.solana?.isPhantom) {
+    return window.solana;
+  }
+  
+  throw new Error('Phantom wallet not found! Please install Phantom wallet extension.');
 };
 
 export const signAndSendTransaction = async (

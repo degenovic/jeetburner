@@ -219,7 +219,14 @@ function HomeContent() {
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
-      const provider = getProvider();
+      let provider;
+      try {
+        provider = getProvider();
+      } catch (error) {
+        console.error('Error getting Phantom provider:', error);
+        toast.error('Phantom wallet not detected. Please install or unlock Phantom wallet.', { id: 'transaction-prep' });
+        return;
+      }
       
       // Find the account in our list to get the lamports amount
       const account = accounts.find(acc => acc.pubkey.toString() === accountPubkey.toString());
@@ -277,7 +284,15 @@ function HomeContent() {
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
       
-      const provider = getProvider();
+      // Get Phantom provider
+      let provider;
+      try {
+        provider = getProvider();
+      } catch (error) {
+        console.error('Error getting Phantom provider:', error);
+        toast.error('Phantom wallet not detected. Please install or unlock Phantom wallet.', { id: 'transaction-prep' });
+        return;
+      }
       
       // Find the token accounts from the accounts list
       const tokenAccountsToBurn = accounts.filter(acc => 
