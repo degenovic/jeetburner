@@ -10,17 +10,3 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to get RPC endpoint' }, { status: 500 });
   }
 }
-
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const result = await connection.sendRawTransaction(body.transaction);
-    return NextResponse.json({ result });
-  } catch (error) {
-    console.error('Error sending transaction:', error);
-    return NextResponse.json(
-      { error: 'Failed to send transaction' },
-      { status: 500 }
-    );
-  }
-}
