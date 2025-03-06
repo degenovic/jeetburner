@@ -6,7 +6,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 import { getProvider, signAndSendTransaction } from './utils/phantom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
 import Header from './components/Header';
@@ -268,7 +268,7 @@ function HomeContent() {
     }
   }, [publicKey, connected, connection, fetchAccounts, accounts]);
 
-  const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
+  const handleBurnMultiple = useCallback(async () => {
     if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
       return;
@@ -281,7 +281,7 @@ function HomeContent() {
       
       // Find the token accounts from the accounts list
       const tokenAccountsToBurn = accounts.filter(acc => 
-        accountsToBurn.includes(acc.pubkey.toString())
+        Array.from(selectedAccounts).includes(acc.pubkey.toString())
       );
       
       // Calculate total lamports to be reclaimed
@@ -290,43 +290,65 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Create instructions array
-      const instructions = tokenAccountsToBurn.map(account => 
-        spl.createCloseAccountInstruction(
-          account.pubkey,
-          publicKey,  // Destination for reclaimed SOL
-          publicKey   // Owner of the account
-        )
-      );
+      // Process accounts in batches of 3 to ensure space for Lighthouse guards
+      const BATCH_SIZE = 3;
+      const batches = [];
       
-      // Add fee transfer instruction if applicable
-      if (totalFeeAmount > 0) {
-        instructions.push(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: FEE_WALLET,
-            lamports: totalFeeAmount
-          })
-        );
+      // Split accounts into batches
+      for (let i = 0; i < tokenAccountsToBurn.length; i += BATCH_SIZE) {
+        batches.push(tokenAccountsToBurn.slice(i, i + BATCH_SIZE));
       }
       
-      const numAccounts = tokenAccountsToBurn.length;
-      toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
+      toast.loading(`Please approve ${batches.length} transaction${batches.length > 1 ? 's' : ''} in your wallet. This will close ${tokenAccountsToBurn.length} ${tokenAccountsToBurn.length === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      const signature = await signAndSendTransaction(provider, instructions, connection);
+      // Process each batch
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const instructions: TransactionInstruction[] = [];
+        
+        // Create close account instructions for this batch
+        batch.forEach(account => {
+          const accountPubkey = new PublicKey(account.pubkey);
+          instructions.push(
+            spl.createCloseAccountInstruction(
+              accountPubkey,
+              publicKey,
+              publicKey,
+              [],
+              TOKEN_PROGRAM_ID
+            )
+          );
+        });
+        
+        // Add fee transfer instruction only to the last batch
+        if (i === batches.length - 1 && totalFeeAmount > 0) {
+          instructions.push(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: FEE_WALLET,
+              lamports: totalFeeAmount
+            })
+          );
+        }
+
+        toast.loading(`Processing batch ${i + 1} of ${batches.length}...`, { id: 'transaction-prep' });
+        
+        // Send transaction for this batch
+        const signature = await signAndSendTransaction(provider, instructions, connection);
+        
+        // Wait for confirmation
+        await connection.confirmTransaction(signature);
+      }
       
-      toast.loading('Closing accounts...', { id: 'transaction-prep' });
+      toast.success(`Successfully closed ${tokenAccountsToBurn.length} token ${tokenAccountsToBurn.length === 1 ? 'account' : 'accounts'} and recovered rent!`, { id: 'transaction-prep' });
       
-      await connection.confirmTransaction(signature);
-      
-      const netAmount = totalLamports - totalFeeAmount;
-      toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
+      // Refresh token accounts
       fetchAccounts(publicKey);
     } catch (error) {
       console.error('Bulk claim error:', error);
       toast.error('Failed to claim SOL', { id: 'transaction-prep' });
     }
-  }, [publicKey, connected, connection, fetchAccounts, accounts]);
+  }, [publicKey, connected, connection, fetchAccounts, accounts, selectedAccounts]);
 
   const handleBurnAttempt = useCallback(async () => {
     if (!publicKey || !connected) {
@@ -335,8 +357,8 @@ function HomeContent() {
     }
 
     setClaimError(null);
-    handleBurnMultiple(Array.from(selectedAccounts));
-  }, [publicKey, connected, selectedAccounts, handleBurnMultiple]);
+    handleBurnMultiple();
+  }, [publicKey, connected, handleBurnMultiple]);
 
   const truncateAddress = (address: string, startLength = 4, endLength = 4) => {
     if (!address) return '';
@@ -448,7 +470,7 @@ function HomeContent() {
                     </p>
                     {accounts.length > 0 && connected && isViewingConnectedWallet && (
                       <button
-                        onClick={() => handleBurnMultiple(accounts.map(acc => acc.pubkey.toString()))}
+                        onClick={() => handleBurnMultiple()}
                         className="wallet-adapter-button !w-auto px-4 py-1.5 mt-2 text-sm"
                       >
                         Claim All
