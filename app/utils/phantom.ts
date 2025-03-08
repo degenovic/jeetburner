@@ -1,4 +1,4 @@
-import { Transaction, TransactionInstruction, Connection, PublicKey } from '@solana/web3.js';
+import { Transaction, TransactionInstruction, Connection, PublicKey, Commitment } from '@solana/web3.js';
 
 // Add TypeScript declaration for window.solana
 declare global {
@@ -27,11 +27,11 @@ export const getProvider = () => {
 export const signAndSendTransaction = async (
   provider: any,
   instructions: TransactionInstruction[],
-  connection: Connection
+  connection: Connection,
+  expectedReturnAmount?: number // Optional parameter to show expected return amount
 ) => {
   try {
-    // Create a new transaction with space for Lighthouse guard instructions
-    // Phantom recommends using their signAndSendTransaction method exclusively
+    // Create a new transaction
     const transaction = new Transaction();
     
     // Get recent blockhash
@@ -39,25 +39,35 @@ export const signAndSendTransaction = async (
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
     
-    // Add instructions to transaction
-    // Adding instructions separately rather than in constructor to ensure proper serialization
+    // Add instructions to transaction one by one
+    // This ensures proper serialization and helps Phantom understand the transaction
     instructions.forEach(instruction => {
       transaction.add(instruction);
     });
     
     // Set transaction options to ensure compatibility with Phantom's Lighthouse guard
-    // This ensures there's enough space in the transaction for Phantom's security checks
+    // These options help Phantom understand the transaction purpose
     const options = {
-      skipPreflight: false,  // Enable preflight checks
-      maxRetries: 3          // Allow some retries if needed
+      skipPreflight: false,     // Enable preflight checks
+      maxRetries: 3,            // Allow some retries if needed
+      preflightCommitment: 'confirmed' as Commitment  // Use confirmed commitment level with proper typing
     };
     
-    // Send transaction using Phantom's signAndSendTransaction
-    // This is the recommended method by Phantom to avoid security warnings
-    const { signature } = await provider.signAndSendTransaction(transaction);
+    // Use the recommended signAndSendTransaction method
+    // This is the method recommended by Phantom to avoid security warnings
+    let result;
+    if (provider.signAndSendTransaction) {
+      // Pass the options to signAndSendTransaction to help with transaction processing
+      result = await provider.signAndSendTransaction(transaction, options);
+    } else {
+      // Fallback to legacy method if signAndSendTransaction is not available
+      const signedTransaction = await provider.signTransaction(transaction);
+      const signature = await connection.sendRawTransaction(signedTransaction.serialize(), options);
+      result = { signature };
+    }
     
     // Return the transaction signature
-    return signature;
+    return result.signature;
   } catch (error) {
     console.error('Transaction failed:', error);
     throw error;
