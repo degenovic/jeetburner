@@ -237,9 +237,6 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
-      // Calculate expected return amount (total lamports minus fee)
-      const expectedReturnAmount = account.lamports - feeAmount;
-      
       // Create instructions array
       const instructions = [
         // Close account instruction
@@ -263,8 +260,7 @@ function HomeContent() {
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
-      // Pass the expected return amount to help Phantom display it correctly
-      const signature = await signAndSendTransaction(provider, instructions, connection, expectedReturnAmount);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
@@ -309,9 +305,6 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Calculate expected return amount (total lamports minus fee)
-      const expectedReturnAmount = totalLamports - totalFeeAmount;
-      
       // Create instructions array
       const instructions = tokenAccountsToBurn.map(account => 
         spl.createCloseAccountInstruction(
@@ -335,8 +328,7 @@ function HomeContent() {
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
       
-      // Pass the expected return amount to help Phantom display it correctly
-      const signature = await signAndSendTransaction(provider, instructions, connection, expectedReturnAmount);
+      const signature = await signAndSendTransaction(provider, instructions, connection);
       
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
