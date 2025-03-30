@@ -19,9 +19,9 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://jeetburner.com',
     images: [{
-      url: '/images/jeetburner.gif',
-      width: 800,
-      height: 600,
+      url: '/images/social/jeetelmo.png',
+      width: 1200,
+      height: 630,
       alt: 'JeetBurner Logo'
     }]
   },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     description: 'Find and claim empty token accounts on Solana to recover SOL',
     site: '@jeetburner',
     creator: '@jeetburner',
-    images: ['/images/jeetburner.gif'],
+    images: ['/images/social/jeetelmo.png'],
   },
   verification: {
     google: 'verification_token',
