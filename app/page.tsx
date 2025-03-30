@@ -701,8 +701,8 @@ function HomeContent() {
                   🔥 How does it work?
                   </h3>
                   <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
-                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless rekt accounts.
+                    If you&apos;ve been aping into pumps on Solana, you may have rekt token accounts with 
+                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
                   </p>
                   <p className="text-white mt-4">
                     Learn more about rent on Solana {' '}
@@ -720,15 +720,15 @@ function HomeContent() {
 
                 <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🔎 How do I find my rekt accounts?
+                  🔎 How do I find rekt accounts?
                   </h3>
                   <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Just connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
+                    Connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
                   </p>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">1.</span>
-                      <span className="text-white">Have 0 tokens left (you paper-handed everything)</span>
+                      <span className="text-white">Have 0 tokens left</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">2.</span>
