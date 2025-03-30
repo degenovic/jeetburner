@@ -761,10 +761,7 @@ function HomeContent() {
                   🚨 Is this safe?
                   </h3>
                   <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Yes. We only close accounts that have zero tokens and recover the rent SOL. DYOR but this is literally 
-                    free money you're leaving on the table!
-                  </p>
-                </div>
+                    Yes. We only close accounts that have zero tokens and recover the rent SOL.</p></div>
 
                 <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
@@ -780,11 +777,11 @@ function HomeContent() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">2.</span>
-                      <span className="text-white">Look up your friends&apos; addresses - flex on them with their unclaimed SOL</span>
+                      <span className="text-white">Make it a habit to clean up after rugging yourself</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">3.</span>
-                      <span className="text-white">Make it a habit to clean up after rugging yourself</span>
+                      <span className="text-white">Look up your friends&apos; addresses, and flex on them with their unclaimed SOL</span>
                     </div>
                   </div>
                 </div>
@@ -798,7 +795,7 @@ function HomeContent() {
           </div>
 
           {/* Custom GIF as background overlay */}
-          <div className="absolute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0 }}>
+          <div className="abute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0 }}>
             <div className="max-w-4xl w-full flex justify-center">
               <img 
                 src="/images/jeetelmo2.gif" 
