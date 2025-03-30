@@ -4,24 +4,22 @@ import { Transaction, TransactionInstruction, Connection, PublicKey } from '@sol
 declare global {
   interface Window {
     solana?: any;
+    phantom?: any;
   }
 }
 
 export const getProvider = () => {
-  // Check for Phantom in the window object
-  if ('phantom' in window) {
-    const provider = (window as any).phantom?.solana;
-    if (provider?.isPhantom) {
-      return provider;
-    }
-  }
-  
-  // Check for Solana in the window object (alternate detection method)
-  if (window.solana?.isPhantom) {
+  // Check for any wallet in the window object
+  if (window.solana) {
     return window.solana;
   }
   
-  throw new Error('Phantom wallet not found! Please install Phantom wallet extension.');
+  // Check for Phantom in the window object
+  if ('phantom' in window && window.phantom?.solana) {
+    return window.phantom.solana;
+  }
+  
+  throw new Error('No wallet detected! Please install a Solana wallet extension.');
 };
 
 export const signAndSendTransaction = async (
@@ -30,8 +28,7 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
-    // Create a new transaction with space for Lighthouse guard instructions
-    // Phantom recommends using their signAndSendTransaction method exclusively
+    // Create a new transaction
     const transaction = new Transaction();
     
     // Get recent blockhash
@@ -40,21 +37,38 @@ export const signAndSendTransaction = async (
     transaction.feePayer = provider.publicKey;
     
     // Add instructions to transaction
-    // Adding instructions separately rather than in constructor to ensure proper serialization
     instructions.forEach(instruction => {
       transaction.add(instruction);
     });
     
-    // Set transaction options to ensure compatibility with Phantom's Lighthouse guard
-    // This ensures there's enough space in the transaction for Phantom's security checks
+    // Set transaction options
     const options = {
-      skipPreflight: false,  // Enable preflight checks
-      maxRetries: 3          // Allow some retries if needed
+      skipPreflight: false,
+      maxRetries: 3
     };
     
-    // Send transaction using Phantom's signAndSendTransaction
-    // This is the recommended method by Phantom to avoid security warnings
-    const { signature } = await provider.signAndSendTransaction(transaction);
+    // Try different signing methods depending on what the wallet supports
+    let signature;
+    
+    // Method 1: Using signAndSendTransaction (most wallets support this)
+    if (provider.signAndSendTransaction) {
+      const result = await provider.signAndSendTransaction(transaction, options);
+      signature = result.signature || result;
+    }
+    // Method 2: Using signTransaction and sendTransaction separately
+    else if (provider.signTransaction && provider.sendTransaction) {
+      const signedTx = await provider.signTransaction(transaction);
+      signature = await connection.sendRawTransaction(signedTx.serialize());
+    }
+    // Method 3: Using signAllTransactions (some wallets only support this)
+    else if (provider.signAllTransactions) {
+      const signedTx = (await provider.signAllTransactions([transaction]))[0];
+      signature = await connection.sendRawTransaction(signedTx.serialize());
+    }
+    // No supported method found
+    else {
+      throw new Error('Wallet does not support any known transaction signing methods');
+    }
     
     // Return the transaction signature
     return signature;
