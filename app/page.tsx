@@ -1,6 +1,7 @@
 'use client';
 
 import { redirect } from 'next/navigation';
+import FaqModal from './components/FaqModal';
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletContextState } from '@solana/wallet-adapter-react';
@@ -49,6 +50,7 @@ function HomeContent() {
   const [claimError, setClaimError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [liveFeedItems, setLiveFeedItems] = useState<{address: string; amount: string; numAccounts: number; timestamp: number}[]>([]);
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -469,18 +471,7 @@ function HomeContent() {
               </p>
               <div className="flex justify-center">
                 <button 
-                  onClick={() => {
-                    const guideElement = document.getElementById('guide-section');
-                    if (guideElement) {
-                      const headerOffset = document.querySelector('header')?.clientHeight || 0;
-                      const elementPosition = guideElement.getBoundingClientRect().top + window.scrollY;
-                      const offsetPosition = elementPosition - headerOffset - 20; // Adjust for header height and extra margin
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: 'smooth'
-                      });
-                    }
-                  }}
+                  onClick={() => setIsFaqModalOpen(true)}
                   className="text-gray-400 hover:text-white text-sm mt-2 cursor-pointer underline flex items-center gap-1"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -691,97 +682,83 @@ function HomeContent() {
               </div>
             )}
 
-            {/* FAQ Section */}
+            {/* FAQ Modal */}
+            <FaqModal isOpen={isFaqModalOpen} onClose={() => setIsFaqModalOpen(false)} />
+            
+            {/* Hidden FAQ Section for SEO */}
             <div className="w-full max-w-4xl">
-              <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
-              
-              <div className="relative" style={{ zIndex: 10, isolation: 'isolate' }}>
-                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🔥 How does it work?
-                  </h3>
-                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    If you&apos;ve been aping into pumps on Solana, you may have rekt token accounts with 
-                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
-                  </p>
-                  <p className="text-white mt-4">
-                    Learn more about rent on Solana {' '}
-                    <a 
-                      href="https://spl_governance.crsp.solutions/" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-pink-500 hover:text-pink-400 underline"
-                    >
-                      here
-                    </a>
-                    .
-                  </p>
-                </div>
+              <div id="guide-section" className="sr-only" aria-hidden="true">
+                <div className="relative">
+                  <div>
+                    <h3>🔥 How does it work?</h3>
+                    <p>
+                      If you&apos;ve been aping into pumps on Solana, you may have rekt token accounts with 
+                      leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
+                    </p>
+                    <p>
+                      Learn more about rent on Solana <a href="https://spl_governance.crsp.solutions/">here</a>.
+                    </p>
+                  </div>
 
-                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🔎 How do I find rekt accounts?
-                  </h3>
-                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">1.</span>
-                      <span className="text-white">Have 0 tokens left</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">2.</span>
-                      <span className="text-white">Still have rent SOL locked up</span>
+                  <div>
+                    <h3>🔎 How do I find rekt accounts?</h3>
+                    <p>
+                      Connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
+                    </p>
+                    <div>
+                      <div>
+                        <span>1.</span>
+                        <span>Have 0 tokens left</span>
+                      </div>
+                      <div>
+                        <span>2.</span>
+                        <span>Still have rent SOL locked up</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  💰 What happens when I burn them?
-                  </h3>
-                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    When you burn (close) an empty token account:
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">1.</span>
-                      <span className="text-white">The rent SOL gets sent to your wallet</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">2.</span>
-                      <span className="text-white">The empty token account gets nuked</span>
+                  <div>
+                    <h3>💰 What happens when I burn them?</h3>
+                    <p>
+                      When you burn (close) an empty token account:
+                    </p>
+                    <div>
+                      <div>
+                        <span>1.</span>
+                        <span>The rent SOL gets sent to your wallet</span>
+                      </div>
+                      <div>
+                        <span>2.</span>
+                        <span>The empty token account gets nuked</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🚨 Is this safe?
-                  </h3>
-                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Yes. We only close accounts that have zero tokens and recover the rent SOL.</p></div>
+                  <div>
+                    <h3>🚨 Is this safe?</h3>
+                    <p>
+                      Yes. We only close accounts that have zero tokens and recover the rent SOL.
+                    </p>
+                  </div>
 
-                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  💸 Any alpha leaks?
-                  </h3>
-                  <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Here&apos;s some jeeter brain moves:
-                  </p>
-                  <div className="mt-4 space-y-2">
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">1.</span>
-                      <span className="text-white">Check your old wallets - your paper hand history might pay off</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">2.</span>
-                      <span className="text-white">Make it a habit to clean up after rugging yourself</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-pink-500">3.</span>
-                      <span className="text-white">Look up your friends&apos; addresses, and flex on them with their unclaimed SOL</span>
+                  <div>
+                    <h3>💸 Any alpha leaks?</h3>
+                    <p>
+                      Here&apos;s some jeeter brain moves:
+                    </p>
+                    <div>
+                      <div>
+                        <span>1.</span>
+                        <span>Check your old wallets - your paper hand history might pay off</span>
+                      </div>
+                      <div>
+                        <span>2.</span>
+                        <span>Make it a habit to clean up after rugging yourself</span>
+                      </div>
+                      <div>
+                        <span>3.</span>
+                        <span>Look up your friends&apos; addresses, and flex on them with their unclaimed SOL</span>
+                      </div>
                     </div>
                   </div>
                 </div>
