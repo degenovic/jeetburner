@@ -461,7 +461,7 @@ function HomeContent() {
       <div className="relative" style={{ zIndex: 1 }}>
         <Header />
         <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col items-center gap-16">
+          <div className="flex flex-col items-center gap-4">
             {/* Main Heading */}
             <div className="text-center mb-8">
               <p className="text-white" style={{ marginTop: '15px', fontSize: '28px' }}>
@@ -694,12 +694,9 @@ function HomeContent() {
             {/* FAQ Section */}
             <div className="w-full max-w-4xl">
               <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
-              <h2 className="text-4xl font-bold mb-8 text-center text-white relative">
-                Degen&apos;s Guide to <b>Claim Free SOL!</b>
-              </h2>
               
-              <div className="space-y-8 relative" style={{ zIndex: 10, isolation: 'isolate' }}>
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+              <div className="relative" style={{ zIndex: 10, isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🔥 How does it work?
                   </h3>
@@ -721,8 +718,7 @@ function HomeContent() {
                   </p>
                 </div>
 
-
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🔎 How do I find my rekt accounts?
                   </h3>
@@ -741,7 +737,7 @@ function HomeContent() {
                   </div>
                 </div>
 
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   💰 What happens when I burn them?
                   </h3>
@@ -760,7 +756,7 @@ function HomeContent() {
                   </div>
                 </div>
 
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   🚨 Is this safe?
                   </h3>
@@ -770,7 +766,7 @@ function HomeContent() {
                   </p>
                 </div>
 
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
+                <div className="bg-gray-900 rounded-lg px-0 py-4" style={{ isolation: 'isolate', marginBottom: '24px', marginTop: '24px' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
                   💸 Any alpha leaks?
                   </h3>
