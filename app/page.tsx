@@ -763,7 +763,7 @@ function HomeContent() {
                   <div>
                     <h3>💸 Any alpha leaks?</h3>
                     <p>
-                      Here&apos;s some jeeter brain moves:
+                      Here&apos;s some big brain moves:
                     </p>
                     <div>
                       <div>

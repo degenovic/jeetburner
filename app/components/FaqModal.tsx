@@ -101,7 +101,7 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
             <div className="px-2">
               <h3 className="text-lg font-bold mb-2 text-white flex items-center gap-2"><span className="bg-gray-700 p-1 rounded-lg">💸</span> Any alpha leaks?</h3>
               <p className="text-gray-200 pr-2">
-                Here&apos;s some jeeter brain moves:
+                Here&apos;s some big brain moves:
               </p>
               <div className="mt-2 space-y-1 pl-2">
                 <div className="flex items-start gap-2">
