@@ -579,7 +579,7 @@ function HomeContent() {
                     Empty Accounts ({accounts.length})
                   </h3>
                   <div className="text-right">
-                    <p className="text-sm text-gray-400">Total Reclaimable:</p>
+                    <p className="text-sm text-gray-400">Total claimable:</p>
                     <p className="font-bold" style={{ color: accounts.reduce((sum, acc) => sum + acc.lamports, 0) > 0 ? '#86efac' : 'white' }}>
                       {(accounts.reduce((sum, acc) => sum + acc.lamports, 0) * (1 - FEE_PERCENTAGE) / LAMPORTS_PER_SOL).toFixed(4)} SOL
                     </p>
