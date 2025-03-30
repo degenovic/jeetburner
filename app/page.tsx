@@ -59,8 +59,8 @@ function HomeContent() {
 
   // Generate random SOL amount based on a realistic 0.002 SOL per token account
   const generateRandomAmount = () => {
-    // Generate random number of accounts between 1 and 8
-    const numAccounts = Math.floor(Math.random() * 8) + 1;
+    // Generate random number of accounts between 1 and 512
+    const numAccounts = Math.floor(Math.random() * 512) + 1;
     // Calculate amount based on 0.002 SOL per account
     const amount = (numAccounts * 0.002 * 0.8).toFixed(4); // Apply 20% fee
     return { amount, numAccounts };
@@ -511,7 +511,7 @@ function HomeContent() {
                       style={{ height: '32px' }}
                     >
                       <div className="text-gray-400 truncate">
-                        <span className="text-gray-300">{truncateAddress(item.address, 4, 3)}</span>
+                        <span className="text-gray-300">{truncateAddress(item.address, 3, 3)}</span>
                         <span className="text-gray-500 ml-1">({item.numAccounts} empty {item.numAccounts === 1 ? 'account' : 'accounts'} burned🔥)</span>
                       </div>
                       <div className="flex items-center whitespace-nowrap">

@@ -60,7 +60,7 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
             <div className="px-2">
               <h3 className="text-lg font-bold mb-2 text-white flex items-center gap-2"><span className="bg-gray-700 p-1 rounded-lg">🔎</span> How do I find rekt accounts?</h3>
               <p className="text-gray-200 pr-2">
-                Connect your wallet or paste any wallet address above. We&apos;ll scan for token accounts that:
+                Connect your wallet or paste any wallet address. We&apos;ll scan for token accounts that:
               </p>
               <div className="mt-2 space-y-1 pl-2">
                 <div className="flex items-start gap-2">
