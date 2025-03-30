@@ -795,7 +795,7 @@ function HomeContent() {
             <div className="max-w-4xl w-full flex justify-center">
               <img 
                 src="/images/jeetelmo2.gif" 
-                alt="Jeet Elmo" 
+                alt="Token Burner Elmo" 
                 style={{ 
                   opacity: 0.66,
                   maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
