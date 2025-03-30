@@ -59,8 +59,27 @@ function HomeContent() {
 
   // Generate random SOL amount based on a realistic 0.002 SOL per token account
   const generateRandomAmount = () => {
-    // Generate random number of accounts between 1 and 512
-    const numAccounts = Math.floor(Math.random() * 512) + 1;
+    // Generate a number of accounts with higher probability for lower numbers
+    // Using a power law distribution to make smaller values more likely
+    let numAccounts;
+    
+    // Determine which distribution to use based on random chance
+    const distributionChoice = Math.random();
+    
+    if (distributionChoice < 0.70) {
+      // 70% chance: 1-20 accounts (most common case)
+      numAccounts = Math.floor(Math.pow(Math.random(), 2) * 20) + 1;
+    } else if (distributionChoice < 0.90) {
+      // 20% chance: 21-100 accounts (less common)
+      numAccounts = Math.floor(Math.pow(Math.random(), 1.5) * 80) + 21;
+    } else if (distributionChoice < 0.98) {
+      // 8% chance: 101-300 accounts (rare)
+      numAccounts = Math.floor(Math.pow(Math.random(), 1.2) * 200) + 101;
+    } else {
+      // 2% chance: 301-512 accounts (very rare)
+      numAccounts = Math.floor(Math.random() * 212) + 301;
+    }
+    
     // Calculate amount based on 0.002 SOL per account
     const amount = (numAccounts * 0.002 * 0.8).toFixed(4); // Apply 20% fee
     return { amount, numAccounts };
