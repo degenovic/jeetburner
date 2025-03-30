@@ -1,15 +1,11 @@
-import { ImageResponse } from 'next/og'
- 
-export const runtime = 'edge'
- 
-export const alt = 'JeetBurner - Burn Empty Token Accounts on Solana'
-export const size = {
-  width: 1200,
-  height: 630,
-}
-export const contentType = 'image/png'
+import { ImageResponse } from 'next/og';
 
-export default async function Image() {
+export const runtime = 'edge';
+export const alt = 'JeetBurner - Burn Empty Token Accounts on Solana';
+export const size = { width: 1200, height: 630 };
+export const contentType = 'image/png';
+
+export default function Image() {
   return new ImageResponse(
     (
       <div
@@ -60,5 +56,5 @@ export default async function Image() {
     {
       ...size,
     }
-  )
+  );
 }

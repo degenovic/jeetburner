@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   title: 'JeetBurner - Burn Empty Token Accounts',
   description: 'Find and claim empty token accounts on Solana to recover SOL. A tool to help you manage your Solana wallet and reclaim rent from unused token accounts.',
   keywords: 'Solana, Token, Wallet, SOL, Rent, Recovery, Blockchain, Cryptocurrency',
+  metadataBase: new URL('https://jeetburner.com'),
   openGraph: {
     title: 'JeetBurner - Burn Empty Token Accounts',
     description: 'Find and claim empty token accounts on Solana to recover SOL',
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: 'https://jeetburner.com',
     images: [{
-      url: 'https://jeetburner.com/images/jeetelmo.gif',
+      url: '/images/jeetburner.gif',
       width: 800,
       height: 600,
       alt: 'JeetBurner Logo'
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     description: 'Find and claim empty token accounts on Solana to recover SOL',
     site: '@jeetburner',
     creator: '@jeetburner',
-    images: ['https://jeetburner.com/images/jeetelmo.gif'],
+    images: ['/images/jeetburner.gif'],
   },
   verification: {
     google: 'verification_token',
