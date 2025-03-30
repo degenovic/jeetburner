@@ -50,7 +50,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jetbrains.className} suppressHydrationWarning>
-      <head />
+      <head>
+        {/* Direct meta tags for social media previews */}
+        <meta property="og:title" content="JeetBurner - Burn Empty Token Accounts" />
+        <meta property="og:description" content="Find and claim empty token accounts on Solana to recover SOL" />
+        <meta property="og:image" content="https://jeetburner.com/images/social/jeetelmo.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:url" content="https://jeetburner.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="JeetBurner" />
+        
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="JeetBurner - Burn Empty Token Accounts" />
+        <meta name="twitter:description" content="Find and claim empty token accounts on Solana to recover SOL" />
+        <meta name="twitter:image" content="https://jeetburner.com/images/social/jeetelmo.png" />
+        <meta name="twitter:site" content="@jeetburner" />
+        <meta name="twitter:creator" content="@jeetburner" />
+      </head>
       <body className="bg-[#000000] min-h-screen">
         <Providers>
           {children}
