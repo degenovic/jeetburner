@@ -1,7 +1,7 @@
 'use client';
 
 import { redirect } from 'next/navigation';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 import { getProvider, signAndSendTransaction } from './utils/phantom';
@@ -48,10 +48,98 @@ function HomeContent() {
   const [isViewingConnectedWallet, setIsViewingConnectedWallet] = useState(true);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [liveFeedItems, setLiveFeedItems] = useState<{address: string; amount: string; numAccounts: number; timestamp: number}[]>([]);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Generate random SOL amount based on a realistic 0.002 SOL per token account
+  const generateRandomAmount = () => {
+    // Generate random number of accounts between 1 and 8
+    const numAccounts = Math.floor(Math.random() * 8) + 1;
+    // Calculate amount based on 0.002 SOL per account
+    const amount = (numAccounts * 0.002 * 0.8).toFixed(4); // Apply 20% fee
+    return { amount, numAccounts };
+  };
+
+  // Generate random Solana-like address
+  const generateRandomAddress = () => {
+    const chars = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    let result = '';
+    for (let i = 0; i < 44; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  // Function to add a new random feed item
+  const addRandomFeedItem = useCallback(() => {
+    setLiveFeedItems(prevItems => {
+      const newItems = [...prevItems];
+      // Add new item at the beginning
+      const { amount, numAccounts } = generateRandomAmount();
+      newItems.unshift({
+        address: generateRandomAddress(),
+        amount: amount,
+        numAccounts: numAccounts,
+        timestamp: Date.now()
+      });
+      // Keep only the latest 7 items
+      return newItems.slice(0, 7);
+    });
+    
+    // Reset and trigger scroll animation
+    const feedContainer = document.querySelector('.animate-continuous-scroll');
+    if (feedContainer) {
+      // First remove the animation
+      (feedContainer as HTMLElement).style.animation = 'none';
+      // Force a reflow
+      void (feedContainer as HTMLElement).offsetHeight;
+      // Apply the animation again
+      (feedContainer as HTMLElement).style.animation = 'continuous-scroll 1s ease-in-out';
+    }
+  }, []);
+
+  // Set up random intervals for adding new feed items
+  const setupNextInterval = useCallback(() => {
+    // Random time between 3 and 10 seconds
+    const randomTime = Math.floor(Math.random() * 7000) + 3000;
+    return setTimeout(() => {
+      addRandomFeedItem();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      timeoutRef.current = setupNextInterval();
+    }, randomTime);
+  }, [addRandomFeedItem]);
+
+  // Live feed effect
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Add initial feed items
+    const initialItems = Array(7).fill(null).map(() => {
+      const { amount, numAccounts } = generateRandomAmount();
+      return {
+        address: generateRandomAddress(),
+        amount: amount,
+        numAccounts: numAccounts,
+        timestamp: Date.now()
+      };
+    });
+    setLiveFeedItems(initialItems);
+
+    // Start the interval
+    timeoutRef.current = setupNextInterval();
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [mounted, setupNextInterval]);
 
   // Handle wallet connection - this takes priority
   useEffect(() => {
@@ -376,8 +464,8 @@ function HomeContent() {
           <div className="flex flex-col items-center gap-16">
             {/* Main Heading */}
             <div className="text-center mb-8">
-              <p className="text-white text-2xl" style={{ marginTop: '15px' }}>
-                Find and burn empty token accounts to get SOL back
+              <p className="text-white" style={{ marginTop: '15px', fontSize: '28px' }}>
+                Burn empty token accounts to claim SOL
               </p>
               <div className="flex justify-center">
                 <button 
@@ -404,17 +492,60 @@ function HomeContent() {
               </div>
             </div>
 
+            {/* Live Feed */}
+            <div className="w-full max-w-4xl overflow-hidden bg-gray-900/30 rounded-lg border-0 relative">
+              <div className="p-2 bg-gray-800/50 flex items-center">
+                <div className="flex items-center">
+                  <div style={{ 
+                    width: '8px', 
+                    height: '8px', 
+                    borderRadius: '50%', 
+                    backgroundColor: '#22c55e',
+                    marginRight: '8px',
+                    animation: 'liveBlink 2.4s ease-in-out infinite'
+                  }}></div>
+                </div>
+                <span className="text-xs text-gray-400">ACTIVITY</span>
+              </div>
+              <div className="py-0.5 relative overflow-hidden" style={{ height: '180px' }}>
+                {/* Container for the scrolling content */}
+                <div className="animate-continuous-scroll" style={{ 
+                  transform: 'translateY(0)',
+                  transition: 'transform 0.8s ease-out'
+                }}>
+                  {liveFeedItems.map((item, index) => (
+                    <div 
+                      key={item.timestamp + index} 
+                      className={`text-sm flex justify-between items-center p-1.5 mb-2 ${index === 0 ? 'bg-gray-800/30 rounded' : ''}`}
+                      style={{ height: '32px' }}
+                    >
+                      <div className="text-gray-400 truncate">
+                        <span className="text-gray-300">{truncateAddress(item.address, 4, 3)}</span>
+                        <span className="text-gray-500 ml-1">({item.numAccounts} empty {item.numAccounts === 1 ? 'account' : 'accounts'} burned🔥)</span>
+                      </div>
+                      <div className="flex items-center whitespace-nowrap">
+                        <span style={{ color: 'rgb(134, 239, 172)' }} className="font-semibold">{item.amount}</span>
+                        <span className="text-gray-400 ml-1">SOL claimed!</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Strong gradient overlay for fade-out effect */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50px', background: 'linear-gradient(to top, #000000 30%, rgba(0, 0, 0, 0.8) 70%, rgba(0, 0, 0, 0) 100%)', pointerEvents: 'none', zIndex: 10 }}></div>
+              </div>
+            </div>
+
             {/* Wallet Connection and Search */}
-            <div className="w-full max-w-4xl flex flex-col items-center gap-6">
+            <div className="w-full max-w-4xl flex flex-col items-center gap-2 -mt-2">
               <div suppressHydrationWarning>
                 <WalletMultiButton />
               </div>
 
-              <div className="text-gray-400 text-xl font-bold">OR</div>
+              <div className="text-gray-400 text-sm font-bold my-1">OR</div>
 
-              <div className="w-full mb-16">
+              <div className="w-full mb-2">
                 {/* Public Key Search */}
-                <div className="mb-8">
+                <div className="mb-2">
                   <div className="flex gap-4 items-center">
                     <input
                       type="text"
@@ -437,13 +568,13 @@ function HomeContent() {
                   )}
                 </div>
 
-                <div className="h-16"></div>
+                <div className="h-4"></div>
 
                 {/* Connected Wallet Info */}
                 {connected && publicKey && (
-                  <div className="text-center mb-16">
-                    <h2 className="text-2xl font-bold mb-2">Connected Wallet</h2>
-                    <p className="text-gray-400">{truncateAddress(publicKey.toString(), 6, 6)}</p>
+                  <div className="text-center mb-3">
+                    <h2 className="text-xl font-bold mb-1">Connected Wallet</h2>
+                    <p className="text-gray-400 text-sm">{truncateAddress(publicKey.toString(), 6, 6)}</p>
                   </div>
                 )}
               </div>
@@ -563,18 +694,18 @@ function HomeContent() {
             {/* FAQ Section */}
             <div className="w-full max-w-4xl">
               <div id="guide-section" className="h-32" /> {/* Spacer element for scroll target */}
-              <h2 className="text-4xl font-bold mb-12 text-center text-white relative">
-                <u>&apos;Degen&apos;s Guide to Rent Recovery&apos;</u>
+              <h2 className="text-4xl font-bold mb-8 text-center text-white relative">
+                Degen&apos;s Guide to <b>Claim Free SOL!</b>
               </h2>
               
               <div className="space-y-8 relative" style={{ zIndex: 10, isolation: 'isolate' }}>
                 <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🤔 How does it work?
+                  🔥 How does it work?
                   </h3>
                   <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     If you&apos;ve been aping into pumps on Solana, you probably have some rekt token accounts with 
-                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back.
+                    leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless rekt accounts.
                   </p>
                   <p className="text-white mt-4">
                     Learn more about rent on Solana {' '}
@@ -590,16 +721,6 @@ function HomeContent() {
                   </p>
                 </div>
 
-                <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
-                  <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                    💰 Why should I close empty accounts?
-                  </h3>
-                  <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Each empty token account holds about 0.002 SOL (2,039,280 lamports to be exact). 
-                    If you&apos;re a true degen who&apos;s been farming every token under the Solana sun, you might have dozens 
-                    of these collecting dust.
-                  </p>
-                </div>
 
                 <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
@@ -615,14 +736,14 @@ function HomeContent() {
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">2.</span>
-                      <span className="text-white">Still have that sweet rent SOL locked up</span>
+                      <span className="text-white">Still have rent SOL locked up</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🔥 What happens when I burn them?
+                  💰 What happens when I burn them?
                   </h3>
                   <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
                     When you burn (close) an empty token account:
@@ -630,25 +751,22 @@ function HomeContent() {
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">1.</span>
-                      <span className="text-white">The rent SOL gets sent back to your wallet</span>
+                      <span className="text-white">The rent SOL gets sent to your wallet</span>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-pink-500">2.</span>
-                      <span className="text-white">The empty token account gets nuked (but don&apos;t worry, you can always make a new one)</span>
+                      <span className="text-white">The empty token account gets nuked</span>
                     </div>
                   </div>
-                  <p className="text-white mt-4">
-                    It&apos;s basically like getting an airdrop for being a jeeter.
-                  </p>
                 </div>
 
                 <div className="bg-gray-900 rounded-lg p-8" style={{ isolation: 'isolate' }}>
                   <h3 className="text-2xl font-bold mb-4 mt-4 relative" style={{ marginBottom: '15px', isolation: 'isolate' }}>
-                  🚨 Is this safe, ser?
+                  🚨 Is this safe?
                   </h3>
                   <p className="text-white space-y-4 relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    It's safe-pilled. We only close accounts that have zero tokens and only recover the rent SOL. DYOR but this is literally 
-                    free money you left on the table!
+                    Yes. We only close accounts that have zero tokens and recover the rent SOL. DYOR but this is literally 
+                    free money you're leaving on the table!
                   </p>
                 </div>
 
@@ -657,7 +775,7 @@ function HomeContent() {
                   💸 Any alpha leaks?
                   </h3>
                   <p className="text-white relative" style={{ isolation: 'isolate', opacity: 1 }}>
-                    Here&apos;s some galaxy brain moves:
+                    Here&apos;s some jeeter brain moves:
                   </p>
                   <div className="mt-4 space-y-2">
                     <div className="flex items-start gap-2">
@@ -729,15 +847,40 @@ function HomeContent() {
             </div>
           </div>
         </div>
-        <div className="mb-6" />
+        <div className="mb-2" />
       </div>
     </main>
   );
 }
 
+// Add animation for the live feed
+const styles = `
+  @keyframes continuous-scroll {
+    0% { transform: translateY(-40px); }
+    20% { transform: translateY(-40px); }
+    100% { transform: translateY(0); }
+  }
+  .animate-continuous-scroll {
+    animation: continuous-scroll 1s ease-in-out;
+  }
+  @keyframes liveBlink {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 8px 2px rgba(34, 197, 94, 0.6);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(0.8);
+      box-shadow: 0 0 0px 0px rgba(34, 197, 94, 0);
+    }
+  }
+`;
+
 export default function Home() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
+      <style jsx global>{styles}</style>
       <HomeContent />
     </Suspense>
   );
