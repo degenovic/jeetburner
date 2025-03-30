@@ -14,8 +14,11 @@ export const metadata: Metadata = {
     title: 'JeetBurner - Burn Empty Token Accounts',
     description: 'Find and claim empty token accounts on Solana to recover SOL',
     type: 'website',
+    siteName: 'JeetBurner',
+    locale: 'en_US',
+    url: 'https://jeetburner.com',
     images: [{
-      url: '/jeetelmo.gif',
+      url: 'https://jeetburner.com/images/jeetelmo.gif',
       width: 800,
       height: 600,
       alt: 'JeetBurner Logo'
@@ -25,7 +28,9 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'JeetBurner - Burn Empty Token Accounts',
     description: 'Find and claim empty token accounts on Solana to recover SOL',
-    images: ['/jeetelmo.gif'],
+    site: '@jeetburner',
+    creator: '@jeetburner',
+    images: ['https://jeetburner.com/images/jeetelmo.gif'],
   },
   verification: {
     google: 'verification_token',
