@@ -82,11 +82,11 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
               <div className="mt-2 space-y-1 pl-2">
                 <div className="flex items-start gap-2">
                   <span className="text-pink-500 font-bold">1.</span>
-                  <span className="text-gray-200">The rent SOL gets sent to your wallet</span>
+                  <span className="text-gray-200">The rent SOL is sent to your wallet</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-pink-500 font-bold">2.</span>
-                  <span className="text-gray-200">The empty token account gets nuked</span>
+                  <span className="text-gray-200">The empty token account is closed</span>
                 </div>
               </div>
             </div>

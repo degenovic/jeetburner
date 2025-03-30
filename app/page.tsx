@@ -696,7 +696,7 @@ function HomeContent() {
                       leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
                     </p>
                     <p>
-                      Learn more about rent on Solana <a href="https://spl_governance.crsp.solutions/">here</a>.
+                      Learn more about rent on Solana <a href="https://solana.com/docs/core/accounts#rent">here</a>.
                     </p>
                   </div>
 
@@ -725,11 +725,11 @@ function HomeContent() {
                     <div>
                       <div>
                         <span>1.</span>
-                        <span>The rent SOL gets sent to your wallet</span>
+                        <span>The rent SOL is sent to your wallet</span>
                       </div>
                       <div>
                         <span>2.</span>
-                        <span>The empty token account gets nuked</span>
+                        <span>The empty token account is closed</span>
                       </div>
                     </div>
                   </div>
