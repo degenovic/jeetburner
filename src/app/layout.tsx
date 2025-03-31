@@ -26,15 +26,13 @@ export default function RootLayout({
     <html lang="en">
       <head>
       <script async src="https://www.googletagmanager.com/gtag/js?id=G-9Z2KVNH7P0"></script>
-        <script>
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
+      <script dangerouslySetInnerHTML={{ __html: `
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-            gtag('config', 'G-9Z2KVNH7P0');
-          `}
-        </script>
+        gtag('config', 'G-9Z2KVNH7P0');
+      ` }} />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
