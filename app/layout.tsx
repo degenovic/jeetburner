@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { JetBrains_Mono } from 'next/font/google'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import './globals.css'
 import { Providers } from './providers'
 import { Toaster } from 'react-hot-toast'
@@ -73,6 +74,7 @@ export default function RootLayout({
           {children}
           <Toaster position="bottom-right" />
         </Providers>
+        <GoogleAnalytics gaId="G-9Z2KVNH7P0" />
       </body>
     </html>
   )
