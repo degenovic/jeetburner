@@ -7,6 +7,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 import { getProvider, signAndSendTransaction } from './utils/phantom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { trackWalletConnect } from './utils/analytics';
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
@@ -165,6 +166,11 @@ function HomeContent() {
   // Handle wallet connection - this takes priority
   useEffect(() => {
     if (publicKey) {
+      // Track wallet connection event
+      const wallet = window.solana?.wallet;
+      const walletName = wallet ? wallet.adapter?.name : 'unknown';
+      trackWalletConnect(walletName);
+      
       setSearchedPubkey(publicKey);
       setIsViewingConnectedWallet(true);
       setHasSearched(false);
@@ -548,7 +554,7 @@ function HomeContent() {
             {/* Wallet Connection and Search */}
             <div className="w-full max-w-4xl flex flex-col items-center gap-2 -mt-2">
               <div suppressHydrationWarning>
-                <WalletMultiButton />
+                <WalletMultiButton onClick={() => trackWalletConnect('button_click')} />
               </div>
 
               <div className="text-gray-400 text-sm font-bold my-1">OR</div>

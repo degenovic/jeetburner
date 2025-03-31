@@ -2,9 +2,22 @@
 
 import Link from 'next/link'
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui'
+import { useWallet } from '@solana/wallet-adapter-react'
+import { useEffect } from 'react'
+import { trackWalletConnect } from '../utils/analytics'
 import { Logo } from './Logo'
 
 export default function Header() {
+  const { wallet, connected } = useWallet()
+
+  // Track wallet connection events
+  useEffect(() => {
+    if (connected && wallet) {
+      // Track successful connection with wallet name
+      trackWalletConnect(wallet.adapter.name)
+    }
+  }, [connected, wallet])
+
   return (
     <header 
       className="
