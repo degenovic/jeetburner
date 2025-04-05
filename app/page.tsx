@@ -847,6 +847,10 @@ function HomeContent() {
                       <li>• No more paying rent on useless accounts</li>
                     </ul>
                     
+                    <p className="text-gray-300 text-sm italic mt-1">
+                      To keep this tool up and running, a 20% donation is included for the recovered SOL.
+                    </p>
+                    
                     <div className="flex justify-center mt-2">
                       <button 
                         onClick={(e) => {
