@@ -110,7 +110,7 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-pink-500 font-bold">2.</span>
-                  <span className="text-gray-200">Check your friends&apos; wallets - be a hero and help them claim SOL</span>
+                  <span className="text-gray-200">Check your friends&apos; wallets - be a hero and help them claim SOL. You can share any wallet by just adding the address to the end of our url - jeetburner.com/wallet_address</span>
                 </div>
               </div>
             </div>

@@ -536,7 +536,7 @@ function HomeContent() {
                       style={{ height: '32px' }}
                     >
                       <div className="text-gray-400 truncate">
-                        <span className="text-gray-300">{truncateAddress(item.address, 3, 3)}</span>
+                        <span className="text-gray-300">{item.address}</span>
                         <span className="text-gray-500 ml-1">({item.numAccounts} empty {item.numAccounts === 1 ? 'account' : 'accounts'} burned🔥)</span>
                       </div>
                       <div className="flex items-center whitespace-nowrap">
@@ -590,7 +590,7 @@ function HomeContent() {
                 {connected && publicKey && (
                   <div className="text-center mb-3">
                     <h2 className="text-xl font-bold mb-1">Connected Wallet</h2>
-                    <p className="text-gray-400 text-sm">{truncateAddress(publicKey.toString(), 6, 6)}</p>
+                    <p className="text-gray-400 text-sm">{publicKey.toString()}</p>
                   </div>
                 )}
               </div>
@@ -640,10 +640,11 @@ function HomeContent() {
                     )}
 
                     <div className="bg-gray-800 rounded-lg overflow-hidden" style={{ marginTop: '15px' }}>
-                      {accounts.map((account) => (
+                      {accounts.map((account, index) => (
                         <div
                           key={account.pubkey.toString()}
-                          className="flex items-center justify-between gap-4 p-4 border rounded-lg border-gray-800 bg-gray-900"
+                          className={`flex items-center justify-between gap-4 p-4 bg-gray-900 rounded-lg border ${index === accounts.length - 1 ? 'mb-5' : 'mb-2'}`}
+                          style={{ borderColor: '#333' }}
                         >
                           <div className="flex items-center gap-3">
                             {isViewingConnectedWallet && connected && (
@@ -695,17 +696,81 @@ function HomeContent() {
                           </div>
                         </div>
                       ))}
-
-                      {accounts.length === 0 && (
-                        <div className="p-8 text-center text-gray-400">
-                          No rent-exempt accounts found
-                        </div>
-                      )}
                     </div>
+
+                    {accounts.length === 0 && (
+                      <div className="p-8 text-center text-gray-400">
+                        No rent-exempt accounts found
+                      </div>
+                    )}
                   </>
                 )}
               </div>
             )}
+
+            {/* See for yourself section */}
+            <div className="w-full max-w-4xl mt-8 mb-4">
+              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check unclaimed SOL in other degen wallets</h3>
+              <div className="bg-gray-800 rounded-lg overflow-hidden">
+                {[
+                  { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
+                  { address: 'CxgPWvH2GoEDENELne2XKAR2z2Fr4shG2uaeyqZceGve', name: 'narracanz', image: '/images/narracanz.jpeg' },
+                  { address: 'HyYNVYmnFmi87NsQqWzLJhUTPBKQUfgfhdbBa554nMFF', name: 'shitoshi__', image: '/images/shitoshi__.jpeg' },
+                  { address: 'HLLXwFZN9CHTct5K4YpucZ137aji27EkkJ1ZaZE7JVmk', name: 'dumbasss', image: '/images/dumbasss.jpeg' }
+                ].map((wallet, index) => (
+                  <div 
+                    key={wallet.address}
+                    className="flex items-center justify-between gap-4 p-4 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer"
+                    onClick={() => {
+                      setSearchKey(wallet.address);
+                      handleSearch(wallet.address);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={wallet.image} 
+                        alt={wallet.name} 
+                        className="w-8 h-8 rounded-full"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder-token.png';
+                        }}
+                      />
+                      <div>
+                        <div className="font-semibold">{wallet.name}</div>
+                        <div className="font-mono text-sm text-gray-400 flex items-center gap-2">
+                          <span className="text-gray-300">{wallet.address}</span>
+                          <a 
+                            href={`https://pump.fun/profile/${wallet.address}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="hover:opacity-80 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <img 
+                              src="/images/pumpfunlogo.webp" 
+                              alt="PumpFun Profile" 
+                              className="w-5 h-5 inline-block"
+                            />
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSearchKey(wallet.address);
+                          handleSearch(wallet.address);
+                        }}
+                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                      >
+                        Check SOL
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* FAQ Modal */}
             <FaqModal isOpen={isFaqModalOpen} onClose={() => setIsFaqModalOpen(false)} />
@@ -721,7 +786,7 @@ function HomeContent() {
                       leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
                     </p>
                     <p>
-                      Learn more about rent on Solana <a href="https://solana.com/docs/core/accounts#rent">here</a>.
+                      Learn more about rent on Solana <a href="https://spl_governance.cratus.io multisig">here</a>.
                     </p>
                   </div>
 
