@@ -751,8 +751,8 @@ function HomeContent() {
               </div>
             )}
 
-            {/* See for yourself section */}
-            <div className="w-full max-w-4xl mt-8 mb-4">
+            {/* See for yourself section with overlapping Pump.fun CTA */}
+            <div className="relative w-full max-w-4xl mt-8 mb-32 md:mb-48 sm:mb-64 xs:mb-80">
               <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL could other wallets get</h3>
               <div className="bg-gray-800 rounded-lg overflow-hidden">
                 {[
@@ -775,7 +775,7 @@ function HomeContent() {
                         alt={wallet.name} 
                         className="w-8 h-8 rounded-full"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-token.png';
+                          (e.target as HTMLImageElement).src = '/placeholder-token.png'
                         }}
                       />
                       <div>
@@ -814,6 +814,57 @@ function HomeContent() {
                     </div>
                   </div>
                 ))}
+              </div>
+              
+              {/* Pump.fun Degen CTA Section - Overlapping */}
+              <div className="absolute w-full max-w-4xl -bottom-24 rounded-lg border border-gray-800 shadow-xl overflow-hidden p-0 z-10" style={{ marginTop: '20px' }}>
+                <div className="absolute inset-0 bg-black opacity-80"></div>
+                <div className="relative z-10 p-8" style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}>
+                  <div className="flex flex-col gap-6 items-center text-center pt-2">
+                    <h3 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                      <img 
+                        src="/images/pumpfunlogo.webp" 
+                        alt="Pump.fun Logo" 
+                        className="w-8 h-8 rounded-lg mr-2"
+                      />
+                      Are you a Degen on Pump.fun?
+                    </h3>
+                    
+                    <p className="text-gray-300 max-w-3xl">
+                      Listen up, Solana degens! 🚀 If you've been aping into every new token on Pump.fun, you might be sitting on a hidden treasure trove of locked-up SOL.
+                      Those countless token accounts you've created during your wild trading sprees? They're not just digital dust – they're potential SOL waiting to be claimed. Each abandoned
+                      account locks up about 0.002 SOL in rent, and if you've been a true degen, those small amounts can quickly add up to a significant chunk of change.
+                    </p>
+                    
+                    <h4 className="text-xl font-bold text-white mt-2">Why JeetBurner is Your New Best Friend 🔥</h4>
+                    <ul className="text-gray-300 list-none space-y-1 text-left max-w-2xl">
+                      <li>• Instantly scan ALL your token accounts</li>
+                      <li>• Recover SOL locked in abandoned accounts</li>
+                      <li>• Clean up your wallet with one-click burning</li>
+                      <li>• No more paying rent on useless accounts</li>
+                    </ul>
+                    
+                    <div className="flex justify-center mt-2">
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const wallet = window.solana?.wallet;
+                          const walletName = wallet ? wallet.adapter?.name : 'unknown';
+                          trackWalletConnect(walletName);
+                          
+                          // Scroll to top of the page
+                          window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                          });
+                        }} 
+                        className="wallet-adapter-button wallet-adapter-button-trigger"
+                      >
+                        Claim Your Lost SOL Now! 🔥
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -901,21 +952,29 @@ function HomeContent() {
             </div>
           </div>
         </div>
-        <div className="mt-16">
+        {/* Add a spacer div that adjusts based on screen size */}
+        <div className="w-full" style={{ minHeight: '300px', height: 'calc(100px + 20vw)' }}>
+          {/* This is an empty spacer to ensure content below doesn't overlap with the CTA */}
+        </div>
+        
+        <div className="w-full relative">
           <div className="flex flex-col items-center justify-center text-center mb-16">
             <div style={{ marginBottom: '25px' }} />
           </div>
 
           {/* Custom GIF as background overlay */}
-          <div className="abute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0 }}>
-            <div className="max-w-4xl w-full flex justify-center">
+          <div className="abute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0, marginTop: '60px' }}>
+            <div className="max-w-4xl w-full flex justify-center relative">
+              <div className="absolute inset-0 bg-black opacity-30 rounded-xl"></div>
               <img 
                 src="/images/jeetelmo2.gif" 
                 alt="Token Burner Elmo" 
                 style={{ 
                   opacity: 0.66,
                   maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
-                  WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)'
+                  WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                  position: 'relative',
+                  zIndex: 1
                 }} 
               />
             </div>
