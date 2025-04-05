@@ -751,8 +751,8 @@ function HomeContent() {
               </div>
             )}
 
-            {/* See for yourself section with overlapping Pump.fun CTA */}
-            <div className="relative w-full max-w-4xl mt-8 mb-32 md:mb-48 sm:mb-64 xs:mb-80">
+            {/* See for yourself section */}
+            <div className="w-full max-w-4xl mt-8 mb-12">
               <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL could other wallets get</h3>
               <div className="bg-gray-800 rounded-lg overflow-hidden">
                 {[
@@ -816,8 +816,11 @@ function HomeContent() {
                 ))}
               </div>
               
-              {/* Pump.fun Degen CTA Section - Overlapping */}
-              <div className="absolute w-full max-w-4xl -bottom-24 rounded-lg border border-gray-800 shadow-xl overflow-hidden p-0 z-10" style={{ marginTop: '20px' }}>
+            </div>
+            
+            {/* Pump.fun Degen CTA Section */}
+            <div className="relative w-full max-w-4xl mb-32">
+              <div className="w-full max-w-4xl rounded-lg border border-gray-800 shadow-xl overflow-hidden p-0 z-10" style={{ marginTop: '20px' }}>
                 <div className="absolute inset-0 bg-black opacity-80"></div>
                 <div className="relative z-10 p-8" style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}>
                   <div className="flex flex-col gap-6 items-center text-center pt-2">
@@ -952,18 +955,12 @@ function HomeContent() {
             </div>
           </div>
         </div>
-        {/* Add a spacer div that adjusts based on screen size */}
-        <div className="w-full" style={{ minHeight: '300px', height: 'calc(100px + 20vw)' }}>
-          {/* This is an empty spacer to ensure content below doesn't overlap with the CTA */}
-        </div>
+        {/* No spacers needed anymore */}
         
-        <div className="w-full relative">
-          <div className="flex flex-col items-center justify-center text-center mb-16">
-            <div style={{ marginBottom: '25px' }} />
-          </div>
-
+        {/* Jeetelmo section positioned to overlap with bottom of CTA */}
+        <div className="w-full relative" style={{ marginTop: '-100px', marginBottom: '50px' }}>
           {/* Custom GIF as background overlay */}
-          <div className="abute bottom-0 left-0 right-0 w-full flex justify-center pointer-events-none" style={{ zIndex: 0, marginTop: '60px' }}>
+          <div className="w-full flex justify-center pointer-events-none" style={{ zIndex: 0 }}>
             <div className="max-w-4xl w-full flex justify-center relative">
               <div className="absolute inset-0 bg-black opacity-30 rounded-xl"></div>
               <img 
