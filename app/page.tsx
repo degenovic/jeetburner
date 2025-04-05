@@ -763,23 +763,23 @@ function HomeContent() {
                 ].map((wallet, index) => (
                   <div 
                     key={wallet.address}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer"
+                    className="flex items-center justify-between gap-4 p-4 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer w-full"
                     onClick={() => {
                       setSearchKey(wallet.address);
                       handleSearch(wallet.address);
                     }}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <img 
                         src={wallet.image} 
                         alt={wallet.name} 
-                        className="w-8 h-8 rounded-full"
+                        className="w-10 h-10 rounded-full flex-shrink-0"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = '/placeholder-token.png'
                         }}
                       />
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1 truncate">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <div className="font-semibold">{wallet.name}</div>
                           <a 
                             href={`https://pump.fun/profile/${wallet.address}`} 
@@ -834,7 +834,7 @@ function HomeContent() {
                     </h3>
                     
                     <p className="text-gray-300 max-w-3xl">
-                      Listen up, Solana degens! 🚀 If you've been aping into every new token on Pump.fun, you might be sitting on a hidden treasure trove of locked-up SOL.
+                      Listen up, sers! 🚀 If you've been aping into every new token on Pump.fun, you might be sitting on a hidden treasure trove of locked-up SOL.
                       Those countless token accounts you've created during your wild trading sprees? They're not just digital dust – they're potential SOL waiting to be claimed. Each abandoned
                       account locks up about 0.002 SOL in rent, and if you've been a true degen, those small amounts can quickly add up to a significant chunk of change.
                     </p>
