@@ -753,7 +753,7 @@ function HomeContent() {
 
             {/* See for yourself section */}
             <div className="w-full max-w-4xl mt-8 mb-12">
-              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL could other wallets get</h3>
+              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL can other wallets get</h3>
               <div className="bg-gray-800 rounded-lg overflow-hidden">
                 {[
                   { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
