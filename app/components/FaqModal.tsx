@@ -41,8 +41,8 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
             <div className="px-2">
               <h3 className="text-lg font-bold mb-2 text-white flex items-center gap-2"><span className="bg-gray-700 p-1 rounded-lg">🔥</span> How does it work?</h3>
               <p className="text-gray-200 pr-2">
-                If you&apos;ve been aping into pumps on Solana, you may have rekt token accounts with 
-                leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these useless accounts.
+                If you&apos;ve been aping into pumps on Solana, you may have empty token accounts with 
+                leftover rent (~0.002 SOL each). This tool helps you claim that SOL back by burning these empty accounts.
               </p>
               <p className="text-gray-200 mt-3 pr-2">
                 Learn more about rent on Solana {' '}
@@ -58,7 +58,7 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
             </div>
             
             <div className="px-2">
-              <h3 className="text-lg font-bold mb-2 text-white flex items-center gap-2"><span className="bg-gray-700 p-1 rounded-lg">🔎</span> How do I find rekt accounts?</h3>
+              <h3 className="text-lg font-bold mb-2 text-white flex items-center gap-2"><span className="bg-gray-700 p-1 rounded-lg">🔎</span> How do I find empty token accounts?</h3>
               <p className="text-gray-200 pr-2">
                 Connect your wallet or paste any wallet address. We&apos;ll scan for token accounts that:
               </p>
@@ -106,11 +106,11 @@ const FaqModal: React.FC<FaqModalProps> = ({ isOpen, onClose }) => {
               <div className="mt-2 space-y-1 pl-2">
                 <div className="flex items-start gap-2">
                   <span className="text-pink-500 font-bold">1.</span>
-                  <span className="text-gray-200">Check your old wallets - your paper hand history might pay off</span>
+                  <span className="text-gray-200">Check your old wallets</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-pink-500 font-bold">2.</span>
-                  <span className="text-gray-200">Check your friends&apos; wallets - be a hero and help them claim SOL. You can share any wallet by just adding the address to the end of our url - jeetburner.com/wallet_address</span>
+                  <span className="text-gray-200">Check your friends&apos; wallets, and help them claim SOL. Note: You can check & share any wallet by just adding the address to the end of our url (jeetburner.com/wallet_address)</span>
                 </div>
               </div>
             </div>

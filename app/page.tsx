@@ -52,6 +52,7 @@ function HomeContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const [liveFeedItems, setLiveFeedItems] = useState<{address: string; amount: string; numAccounts: number; timestamp: number}[]>([]);
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
+  const [isPhantomBannerVisible, setIsPhantomBannerVisible] = useState(true);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -468,7 +469,7 @@ function HomeContent() {
     handleBurnMultiple(Array.from(selectedAccounts));
   }, [publicKey, connected, selectedAccounts, handleBurnMultiple]);
 
-  const truncateAddress = (address: string, startLength = 4, endLength = 4) => {
+  const truncateAddress = (address: string, startLength = 4, endLength = 3) => {
     if (!address) return '';
     if (address.length <= startLength + endLength) return address;
     return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
@@ -484,15 +485,57 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen bg-black">
-      {/* Main content wrapper with relative positioning */}
-      <div className="relative" style={{ zIndex: 1 }}>
+      {/* Phantom Approval Banner */}
+      {isPhantomBannerVisible && (
+        <div 
+          className="fixed top-0 left-0 right-0 bg-[#6736F5] text-white py-3 z-50 flex items-center justify-center"
+          style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
+        >
+          <div className="container mx-auto px-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img 
+                src="/images/phantom-logo-white.png" 
+                alt="Phantom Logo" 
+                className="w-8 h-8 rounded-lg"
+              />
+              <span className="text-sm" style={{ color: '#ab9ff2' }}>
+                We are now approved by Phantom. 
+                For added safety, you can move all your tokens to another wallet before connecting.
+              </span>
+            </div>
+            <button 
+              onClick={() => setIsPhantomBannerVisible(false)}
+              className="ml-4 text-white hover:opacity-80 transition-opacity"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-6 w-6" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+      
+      {/* Adjust top padding to account for banner */}
+      <div 
+        className="relative" 
+        style={{ 
+          zIndex: 1, 
+          paddingTop: isPhantomBannerVisible ? '60px' : '0' 
+        }}
+      >
         <Header />
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col items-center gap-4">
             {/* Main Heading */}
             <div className="text-center mb-8">
               <p className="text-white" style={{ marginTop: '15px', fontSize: '28px' }}>
-                Burn empty token accounts to claim SOL
+                <b>Burn empty token accounts to claim SOL</b>
               </p>
               <div className="flex justify-center">
                 <button 
@@ -536,7 +579,7 @@ function HomeContent() {
                       style={{ height: '32px' }}
                     >
                       <div className="text-gray-400 truncate">
-                        <span className="text-gray-300">{item.address}</span>
+                        <span className="text-gray-300">{truncateAddress(item.address)}</span>
                         <span className="text-gray-500 ml-1">({item.numAccounts} empty {item.numAccounts === 1 ? 'account' : 'accounts'} burned🔥)</span>
                       </div>
                       <div className="flex items-center whitespace-nowrap">
@@ -590,7 +633,7 @@ function HomeContent() {
                 {connected && publicKey && (
                   <div className="text-center mb-3">
                     <h2 className="text-xl font-bold mb-1">Connected Wallet</h2>
-                    <p className="text-gray-400 text-sm">{publicKey.toString()}</p>
+                    <p className="text-gray-400 text-sm">{truncateAddress(publicKey.toString())}</p>
                   </div>
                 )}
               </div>
@@ -710,7 +753,7 @@ function HomeContent() {
 
             {/* See for yourself section */}
             <div className="w-full max-w-4xl mt-8 mb-4">
-              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check unclaimed SOL in other degen wallets</h3>
+              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL could other wallets get</h3>
               <div className="bg-gray-800 rounded-lg overflow-hidden">
                 {[
                   { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
@@ -736,9 +779,8 @@ function HomeContent() {
                         }}
                       />
                       <div>
-                        <div className="font-semibold">{wallet.name}</div>
-                        <div className="font-mono text-sm text-gray-400 flex items-center gap-2">
-                          <span className="text-gray-300">{wallet.address}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="font-semibold">{wallet.name}</div>
                           <a 
                             href={`https://pump.fun/profile/${wallet.address}`} 
                             target="_blank" 
@@ -752,6 +794,9 @@ function HomeContent() {
                               className="w-5 h-5 inline-block"
                             />
                           </a>
+                        </div>
+                        <div className="font-mono text-sm text-gray-400 flex items-center gap-2">
+                          <span className="text-gray-300">{wallet.address}</span>
                         </div>
                       </div>
                     </div>
