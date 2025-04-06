@@ -314,7 +314,7 @@ function HomeContent() {
       setHasSearched(true);
       fetchAccounts(pubkey);
     } catch (error) {
-      setSearchError('Invalid public key');
+      setSearchError('⚠️ Please enter a valid Solana wallet address');
       console.error('Search error:', error);
     }
   };
