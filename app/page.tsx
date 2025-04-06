@@ -713,7 +713,7 @@ function HomeContent() {
             {/* See for yourself section */}
             <div className="w-full max-w-4xl mt-8 mb-12">
               <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL other wallets can get</h3>
-              <div className="flex flex-wrap -mx-2">
+              <div className="flex flex-wrap justify-center gap-4">
                 {[
                   { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
                   { address: 'CxgPWvH2GoEDENELne2XKAR2z2Fr4shG2uaeyqZceGve', name: 'narracanz', image: '/images/narracanz.jpeg' },
@@ -726,7 +726,7 @@ function HomeContent() {
                   return (
                     <div 
                       key={wallet.address}
-                      className="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer rounded-lg overflow-hidden p-4 flex flex-col items-center text-center"
+                      className="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer rounded-lg overflow-hidden p-4 flex flex-col items-center text-center w-[280px]"
                       onClick={() => {
                         setSearchKey(wallet.address);
                         handleSearch(wallet.address);
