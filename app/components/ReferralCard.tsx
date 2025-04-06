@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { generateReferralCode, storeReferralMapping } from '../utils/referral';
+import { generateReferralCode, storeReferralMapping, verifyReferralCode } from '../utils/referral';
 import { trackEvent } from '../utils/analytics';
 
 export function ReferralCard() {
@@ -18,6 +18,12 @@ export function ReferralCard() {
       const walletAddress = publicKey.toString();
       const code = generateReferralCode(walletAddress);
       setReferralCode(code);
+      
+      // Verify the code works correctly
+      const isValid = verifyReferralCode(walletAddress, code);
+      if (!isValid) {
+        console.error('Referral code verification failed');
+      }
       
       // Store the mapping
       storeReferralMapping(walletAddress, code);
@@ -122,7 +128,7 @@ export function ReferralCard() {
         
         <div className="flex justify-between items-center">
           <div className="text-xs text-gray-400">
-            <span className="font-semibold">Referral Code:</span> {referralCode}
+            <span className="font-semibold">Referral Code:</span> <span className="font-mono bg-gray-800 px-1 py-0.5 rounded">{referralCode}</span>
           </div>
           
           <button
@@ -138,6 +144,7 @@ export function ReferralCard() {
         
         <div className="text-xs text-gray-400 mt-2">
           <p>You earn 50% of the 20% burn fee when someone uses your link.</p>
+          <p className="mt-1">Your unique referral code is cryptographically derived from your wallet address.</p>
         </div>
       </div>
     </div>
