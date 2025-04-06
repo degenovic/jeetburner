@@ -32,7 +32,7 @@ export default function PhantomBanner({ onClose }: PhantomBannerProps) {
             alt="Phantom Logo" 
             className="w-6 h-6 rounded-lg flex-shrink-0"
           />
-          <span className="text-xs sm:text-sm" style={{ color: '#ab9ff2' }}>
+          <span className="text-sm" style={{ color: '#ab9ff2' }}>
             We are now approved by Phantom. For added safety, you can move all your tokens to another wallet before connecting.
           </span>
         </div>
