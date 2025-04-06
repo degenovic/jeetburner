@@ -16,6 +16,7 @@ import { Footer } from './components/Footer';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { connection } from './utils/connection';
+import PhantomBanner from './components/PhantomBanner';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -485,51 +486,9 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen bg-black">
-      {/* Phantom Approval Banner */}
-      {isPhantomBannerVisible && (
-        <div 
-          className="fixed top-0 left-0 right-0 bg-[#6736F5] text-white py-3 z-50 flex items-center justify-center"
-          style={{ boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}
-        >
-          <div className="container mx-auto px-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/images/phantom-logo-white.png" 
-                alt="Phantom Logo" 
-                className="w-8 h-8 rounded-lg"
-              />
-              <span className="text-sm" style={{ color: '#ab9ff2' }}>
-                We are now approved by Phantom. 
-                For added safety, you can move all your tokens to another wallet before connecting.
-              </span>
-            </div>
-            <button 
-              onClick={() => setIsPhantomBannerVisible(false)}
-              className="ml-4 text-white hover:opacity-80 transition-opacity"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="h-6 w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      )}
-      
-      {/* Adjust top padding to account for banner */}
-      <div 
-        className="relative" 
-        style={{ 
-          zIndex: 1, 
-          paddingTop: isPhantomBannerVisible ? '60px' : '0' 
-        }}
-      >
-        <Header />
+      <div className="relative">
+        {isPhantomBannerVisible && <PhantomBanner onClose={() => setIsPhantomBannerVisible(false)} />}
+        <Header bannerVisible={isPhantomBannerVisible} />
         <div className="container mx-auto px-4 py-12">
           <div className="flex flex-col items-center gap-4">
             {/* Main Heading */}
@@ -667,7 +626,7 @@ function HomeContent() {
                   )}
                 </div>
                 {loading ? (
-                  <div className="text-center py-8">Loading accounts...</div>
+                  <div className="text-center py-8 animate-pulse">Scanning accounts...</div>
                 ) : (
                   <>
                     {accounts.length > 0 && connected && isViewingConnectedWallet && (
@@ -753,69 +712,59 @@ function HomeContent() {
 
             {/* See for yourself section */}
             <div className="w-full max-w-4xl mt-8 mb-12">
-              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL can other wallets get</h3>
-              <div className="bg-gray-800 rounded-lg overflow-hidden">
+              <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL other wallets can get</h3>
+              <div className="flex flex-wrap -mx-2">
                 {[
                   { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
                   { address: 'CxgPWvH2GoEDENELne2XKAR2z2Fr4shG2uaeyqZceGve', name: 'narracanz', image: '/images/narracanz.jpeg' },
                   { address: 'HyYNVYmnFmi87NsQqWzLJhUTPBKQUfgfhdbBa554nMFF', name: 'shitoshi__', image: '/images/shitoshi__.jpeg' },
                   { address: 'HLLXwFZN9CHTct5K4YpucZ137aji27EkkJ1ZaZE7JVmk', name: 'dumbasss', image: '/images/dumbasss.jpeg' }
-                ].map((wallet, index) => (
-                  <div 
-                    key={wallet.address}
-                    className="flex items-center justify-between gap-4 p-4 bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer w-full"
-                    onClick={() => {
-                      setSearchKey(wallet.address);
-                      handleSearch(wallet.address);
-                    }}
-                  >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <img 
-                        src={wallet.image} 
-                        alt={wallet.name} 
-                        className="w-10 h-10 rounded-full flex-shrink-0"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/placeholder-token.png'
-                        }}
-                      />
-                      <div className="min-w-0 flex-1 truncate">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="font-semibold">{wallet.name}</div>
-                          <a 
-                            href={`https://pump.fun/profile/${wallet.address}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="hover:opacity-80 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <img 
-                              src="/images/pumpfunlogo.webp" 
-                              alt="PumpFun Profile" 
-                              className="w-5 h-5 inline-block"
-                            />
-                          </a>
-                        </div>
-                        <div className="font-mono text-sm text-gray-400 flex items-center gap-2">
-                          <span className="text-gray-300">{wallet.address}</span>
-                        </div>
+                ].map((wallet, index) => {
+                  // Create shortened address format (4 chars at start, 3 at end)
+                  const shortAddress = `${wallet.address.substring(0, 4)}...${wallet.address.substring(wallet.address.length - 3)}`;
+                  
+                  return (
+                    <div 
+                      key={wallet.address}
+                      className="bg-gray-900 hover:bg-gray-800 transition-colors cursor-pointer rounded-lg overflow-hidden p-4 flex flex-col items-center text-center"
+                      onClick={() => {
+                        setSearchKey(wallet.address);
+                        handleSearch(wallet.address);
+                      }}
+                    >
+                      <div className="w-16 h-16 rounded-full mb-2 overflow-hidden bg-gray-800" style={{ minWidth: '64px', minHeight: '64px', maxWidth: '64px', maxHeight: '64px' }}>
+                        <img 
+                          src={wallet.image} 
+                          alt={wallet.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-token.png'
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 justify-center">
+                        <div className="font-semibold text-lg">{wallet.name}</div>
+                        <a 
+                          href={`https://pump.fun/profile/${wallet.address}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="hover:opacity-80 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <img 
+                            src="/images/pumpfunlogo.webp" 
+                            alt="PumpFun Profile" 
+                            className="w-5 h-5 inline-block"
+                          />
+                        </a>
+                      </div>
+                      <div className="font-mono text-sm text-gray-400 mt-1">
+                        {shortAddress}
                       </div>
                     </div>
-                    <div className="flex items-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSearchKey(wallet.address);
-                          handleSearch(wallet.address);
-                        }}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
-                      >
-                        Check SOL
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-              
             </div>
             
             {/* Pump.fun Degen CTA Section */}

@@ -7,7 +7,11 @@ import { useEffect } from 'react'
 import { trackWalletConnect } from '../utils/analytics'
 import { Logo } from './Logo'
 
-export default function Header() {
+interface HeaderProps {
+  bannerVisible?: boolean;
+}
+
+export default function Header({ bannerVisible }: HeaderProps) {
   const { wallet, connected } = useWallet()
 
   // Track wallet connection events
@@ -20,8 +24,8 @@ export default function Header() {
 
   return (
     <header 
-      className="
-        sticky top-0 z-50 
+      className={`
+        sticky ${bannerVisible ? 'top-[4.5rem]' : 'top-0'} z-40
         flex items-center justify-between 
         px-6 py-4
         bg-black/90
@@ -29,7 +33,7 @@ export default function Header() {
         header-border
         mb-8
         border-b border-gray-800
-      "
+      `}
     >
       <div className="flex items-center">
         <div className="flex items-center gap-3">
