@@ -794,7 +794,8 @@ function HomeContent() {
                   { address: '4DdrfiDHpmx55i4SPssxVzS9ZaKLb8qr45NKY9Er9nNh', name: 'icecoffee8', image: '/images/icecoffee8.jpeg' },
                   { address: 'CxgPWvH2GoEDENELne2XKAR2z2Fr4shG2uaeyqZceGve', name: 'narracanz', image: '/images/narracanz.jpeg' },
                   { address: 'HyYNVYmnFmi87NsQqWzLJhUTPBKQUfgfhdbBa554nMFF', name: 'shitoshi__', image: '/images/shitoshi__.jpeg' },
-                  { address: 'HLLXwFZN9CHTct5K4YpucZ137aji27EkkJ1ZaZE7JVmk', name: 'dumbasss', image: '/images/dumbasss.jpeg' }
+                  { address: 'HLLXwFZN9CHTct5K4YpucZ137aji27EkkJ1ZaZE7JVmk', name: 'dumbasss', image: '/images/dumbasss.jpeg' },
+                  { address: '7zbdiFFRdKGaiXQNdBX7mgS95deLuj5XgomgR5HrmeUt', name: 'trustpro', image: '/images/trustpro.jpeg' },
                 ].map((wallet, index) => {
                   // Create shortened address format (4 chars at start, 3 at end)
                   const shortAddress = `${wallet.address.substring(0, 4)}...${wallet.address.substring(wallet.address.length - 3)}`;
