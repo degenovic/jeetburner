@@ -84,51 +84,50 @@ export function ReferralCard() {
     window.open(twitterUrl, '_blank');
   };
 
+  const handleCopyLink = () => {
+    copyToClipboard();
+  };
+
   if (!connected) {
     return null;
   }
 
   return (
-    <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 rounded-xl p-4 backdrop-blur-sm border border-purple-500/30 shadow-lg">
+    <div 
+      className="bg-[#6736F5] text-white py-4 px-4 rounded-lg border mb-5" 
+      style={{ 
+        borderColor: '#333', 
+        borderWidth: '1px', 
+        borderStyle: 'solid',
+        borderImage: 'none'
+      }}
+    >
       <div className="flex flex-col space-y-3">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <span className="text-purple-400">🔗</span> Your Referral Link
+        <h3 className="text-lg font-bold text-white flex items-center gap-2 mb-5">
+          <span className="text-[#ab9ff2]">🔗</span> Your Referral Link
         </h3>
         
-        <p className="text-sm text-gray-300">
-          Share your referral link and earn 50% of the fees when others use it!
-        </p>
-        
-        <div className="relative">
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={referralLink}
-              readOnly
-              className="w-full bg-black/50 border border-purple-500/30 rounded-l-md px-3 py-2 text-sm text-white"
-            />
-            <button
-              onClick={copyToClipboard}
-              className={`px-3 py-2 rounded-r-md text-sm font-medium transition-colors ${
-                copied 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-purple-600 hover:bg-purple-700 text-white'
-              }`}
-            >
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          
-          {showTooltip && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-2 py-1 rounded text-xs">
-              Copied to clipboard!
-            </div>
-          )}
+        <div className="flex items-center space-x-2">
+          <input
+            type="text"
+            readOnly
+            value={referralLink}
+            className="flex-1 px-4 py-2 bg-[#8b4eff] rounded text-white focus:outline-none focus:ring-2 focus:ring-white"
+            onClick={handleCopyLink}
+          />
+          <button
+            onClick={handleCopyLink}
+            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+              copied ? 'bg-green-600 text-white' : 'bg-[#ab9ff2] text-white hover:opacity-80'
+            }`}
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
         </div>
         
         <div className="flex justify-between items-center">
-          <div className="text-xs text-gray-400">
-            <span className="font-semibold">Referral Code:</span> <span className="font-mono bg-gray-800 px-1 py-0.5 rounded">{referralCode}</span>
+          <div className="text-sm text-[#ab9ff2]">
+            <span className="font-semibold">Referral Code:</span> <span className="font-mono bg-[#8b4eff] px-1 py-0.5 rounded">{referralCode}</span>
           </div>
           
           <button
@@ -142,9 +141,8 @@ export function ReferralCard() {
           </button>
         </div>
         
-        <div className="text-xs text-gray-400 mt-2">
-          <p>You earn 50% of the 20% burn fee when someone uses your link.</p>
-          <p className="mt-1">Your unique referral code is cryptographically derived from your wallet address.</p>
+        <div className="text-xs text-[#ab9ff2] mt-2">
+          <p>You will earn 50% of our burn fee when someone uses your link.</p>
         </div>
       </div>
     </div>

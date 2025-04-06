@@ -728,11 +728,11 @@ function HomeContent() {
                 )}
                 
                 {/* Referral Card - Only shown when wallet is connected */}
-                {connected && publicKey && (
+                {/* {connected && publicKey && (
                   <div className="mt-4 mb-3">
                     <ReferralCard />
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 
@@ -866,6 +866,13 @@ function HomeContent() {
               </div>
             )}
 
+            {/* Referral Card - Only shown when wallet is connected and accounts are searched */}
+            {connected && publicKey && hasSearched && (
+              <div className="w-full max-w-4xl mt-6">
+                <ReferralCard />
+              </div>
+            )}
+            
             {/* See for yourself section */}
             <div className="w-full max-w-4xl mt-8 mb-12">
               <h3 className="text-xl font-semibold mb-4 text-center" style={{ marginBottom: '20px' }}>See for yourself 👇👇👇 check how much SOL other wallets can get</h3>
