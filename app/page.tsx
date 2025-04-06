@@ -17,6 +17,8 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { connection } from './utils/connection';
 import PhantomBanner from './components/PhantomBanner';
+import { ReferralCard } from './components/ReferralCard';
+import { getReferrerFromUrl, calculateFeeDistribution, trackReferralVisit } from './utils/referral';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -54,10 +56,21 @@ function HomeContent() {
   const [liveFeedItems, setLiveFeedItems] = useState<{address: string; amount: string; numAccounts: number; timestamp: number}[]>([]);
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isPhantomBannerVisible, setIsPhantomBannerVisible] = useState(true);
+  const [referrerWallet, setReferrerWallet] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check for referrer in URL when component mounts
+    if (typeof window !== 'undefined') {
+      const referrer = getReferrerFromUrl();
+      if (referrer) {
+        setReferrerWallet(referrer);
+        // Track referral visit
+        trackReferralVisit(referrer);
+      }
+    }
   }, []);
 
   // Generate random SOL amount based on a realistic 0.002 SOL per token account
@@ -354,6 +367,10 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
+      // Calculate fee distribution with referral if applicable
+      const { feeWalletAmount, referrerAmount, referrerWallet: activeReferrer } = 
+        calculateFeeDistribution(feeAmount, referrerWallet);
+      
       // Create instructions array
       const instructions = [
         // Close account instruction
@@ -364,15 +381,41 @@ function HomeContent() {
         )
       ];
       
-      // Add fee transfer instruction if applicable
-      if (feeAmount > 0) {
+      // Add fee transfer instructions if applicable
+      if (feeWalletAmount > 0) {
         instructions.push(
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: FEE_WALLET,
-            lamports: feeAmount
+            lamports: feeWalletAmount
           })
         );
+      }
+      
+      // Add referrer fee transfer if applicable
+      if (activeReferrer && referrerAmount > 0) {
+        try {
+          const referrerPubkey = new PublicKey(activeReferrer);
+          instructions.push(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: referrerPubkey,
+              lamports: referrerAmount
+            })
+          );
+        } catch (error) {
+          console.error('Invalid referrer public key:', error);
+          // If referrer pubkey is invalid, send the full fee to the fee wallet
+          if (referrerAmount > 0) {
+            instructions.push(
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: FEE_WALLET,
+                lamports: referrerAmount
+              })
+            );
+          }
+        }
       }
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
@@ -422,6 +465,10 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
+      // Calculate fee distribution with referral if applicable
+      const { feeWalletAmount, referrerAmount, referrerWallet: activeReferrer } = 
+        calculateFeeDistribution(totalFeeAmount, referrerWallet);
+      
       // Create instructions array
       const instructions = tokenAccountsToBurn.map(account => 
         spl.createCloseAccountInstruction(
@@ -431,15 +478,41 @@ function HomeContent() {
         )
       );
       
-      // Add fee transfer instruction if applicable
-      if (totalFeeAmount > 0) {
+      // Add fee transfer instructions if applicable
+      if (feeWalletAmount > 0) {
         instructions.push(
           SystemProgram.transfer({
             fromPubkey: publicKey,
             toPubkey: FEE_WALLET,
-            lamports: totalFeeAmount
+            lamports: feeWalletAmount
           })
         );
+      }
+      
+      // Add referrer fee transfer if applicable
+      if (activeReferrer && referrerAmount > 0) {
+        try {
+          const referrerPubkey = new PublicKey(activeReferrer);
+          instructions.push(
+            SystemProgram.transfer({
+              fromPubkey: publicKey,
+              toPubkey: referrerPubkey,
+              lamports: referrerAmount
+            })
+          );
+        } catch (error) {
+          console.error('Invalid referrer public key:', error);
+          // If referrer pubkey is invalid, send the full fee to the fee wallet
+          if (referrerAmount > 0) {
+            instructions.push(
+              SystemProgram.transfer({
+                fromPubkey: publicKey,
+                toPubkey: FEE_WALLET,
+                lamports: referrerAmount
+              })
+            );
+          }
+        }
       }
       
       const numAccounts = tokenAccountsToBurn.length;
@@ -651,6 +724,13 @@ function HomeContent() {
                   <div className="text-center mb-3">
                     <h2 className="text-xl font-bold mb-1">Connected Wallet</h2>
                     <p className="text-gray-400 text-sm">{truncateAddress(publicKey.toString())}</p>
+                  </div>
+                )}
+                
+                {/* Referral Card - Only shown when wallet is connected */}
+                {connected && publicKey && (
+                  <div className="mt-4 mb-3">
+                    <ReferralCard />
                   </div>
                 )}
               </div>
