@@ -684,7 +684,25 @@ function HomeContent() {
                   )}
                 </div>
                 {loading ? (
-                  <div className="text-center py-8 animate-pulse">Scanning accounts...</div>
+                  <div className="text-center py-12 my-8 bg-gray-800 rounded-lg shadow-lg">
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                      <div className="relative w-16 h-16">
+                        <div className="absolute top-0 left-0 w-full h-full border-4 border-gray-600 rounded-full animate-ping opacity-75"></div>
+                        <div className="absolute top-0 left-0 w-full h-full border-4 border-t-purple-500 border-gray-600 rounded-full animate-spin"></div>
+                      </div>
+                      <div className="text-lg font-medium text-gray-300">
+                        Scanning accounts
+                        <span className="inline-flex ml-1 space-x-1">
+                          <span className="inline-block dot-wave dot-1">.</span>
+                          <span className="inline-block dot-wave dot-2">.</span>
+                          <span className="inline-block dot-wave dot-3">.</span>
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-400 max-w-md">
+                        This may take a moment as we search for empty accounts that can be reclaimed
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     {accounts.length > 0 && connected && isViewingConnectedWallet && (
@@ -989,35 +1007,6 @@ function HomeContent() {
           </div>
 
           <Footer />
-          <div className="bg-gray-900 text-white py-6 px-4 text-sm grid place-items-center" style={{ position: 'relative', zIndex: 10 }}>
-            <div className="max-w-2xl" style={{ position: 'relative', zIndex: 10 }}>
-              <div className="text-white flex items-center justify-center gap-2 mt-4" style={{ paddingBottom: '10px', position: 'relative', zIndex: 10 }}>
-                <span style={{ color: 'white', opacity: 1 }}>Powered by</span>
-                <a 
-                  href="https://www.helius.dev/solana-rpc-nodes" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center hover:text-white transition-colors"
-                  style={{ position: 'relative', zIndex: 10 }}
-                >
-                  <img 
-                    src="https://www.helius.dev/logo.svg" 
-                    alt="Helius" 
-                    className="h-5 inline-block"
-                    style={{ opacity: 1 }}
-                  />
-                </a>
-                <a 
-                  href="https://docs.helius.dev" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="text-white hover:text-white text-sm transition-colors"
-                >
-                  <span style={{ color: 'white', opacity: 1 }}>View Documentation →</span>
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
         <div className="mb-2" />
       </div>
@@ -1046,6 +1035,29 @@ const styles = `
       transform: scale(0.8);
       box-shadow: 0 0 0px 0px rgba(34, 197, 94, 0);
     }
+  }
+  @keyframes wave {
+    0% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(10px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  .dot-wave {
+    animation: wave 1.5s infinite;
+  }
+  .dot-1 {
+    animation-delay: 0s;
+  }
+  .dot-2 {
+    animation-delay: 0.5s;
+  }
+  .dot-3 {
+    animation-delay: 1s;
   }
 `;
 
