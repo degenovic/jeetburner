@@ -605,7 +605,7 @@ function HomeContent() {
                           <path d="M2.25 18a.75.75 0 0 0 0 1.5c5.4 0 10.63.722 15.6 2.075 1.19.324 2.4-.558 2.4-1.82V18.75a.75.75 0 0 0-.75-.75H2.25Z" />
                         </svg>
                       </div>
-                      <span className="text-gray-300 text-sm">Recover Your SOL</span>
+                      <span className="text-gray-300 text-sm">Claim Your SOL</span>
                     </div>
                   </div>
                 </div>
@@ -868,13 +868,13 @@ function HomeContent() {
                     <h4 className="text-xl font-bold text-white mt-2">Why JeetBurner is Your New Best Friend 🔥</h4>
                     <ul className="text-gray-300 list-none space-y-1 text-left max-w-2xl">
                       <li>• Instantly scan ALL your token accounts</li>
-                      <li>• Recover SOL locked in abandoned accounts</li>
+                      <li>• Claim SOL locked in abandoned accounts</li>
                       <li>• Clean up your wallet with one-click burning</li>
                       <li>• No more paying rent on useless accounts</li>
                     </ul>
                     
                     <p className="text-gray-300 text-sm italic mt-1">
-                      To keep this tool up and running, a 20% donation is included for the recovered SOL.
+                      To keep this tool up and running, a 20% donation is included for the claimed SOL.
                     </p>
                     
                     <div className="flex justify-center mt-2">
