@@ -10,7 +10,10 @@
     "preinstall": "npx npm-force-resolutions"
   },
   "resolutions": {
-    "axios": "1.8.2"
+    "axios": "1.8.4"
+  },
+  "overrides": {
+    "axios": "1.8.4"
   },
   "dependencies": {
     "@metaplex-foundation/js": "^0.20.1",
@@ -32,7 +35,9 @@
     "@solana/wallet-adapter-solflare": "^0.6.29",
     "@solana/wallet-adapter-wallets": "^0.19.33",
     "@solana/web3.js": "^1.98.0",
-    "axios": "1.8.2",
+    "@trufflesuite/bigint-buffer": "^1.1.10",
+    "axios": "1.8.4",
+    "bigint-buffer": "^1.1.5",
     "framer-motion": "^12.0.6",
     "next": "^15.2.4",
     "next-themes": "^0.4.4",
@@ -48,6 +53,7 @@
     "eslint": "^9",
     "eslint-config-next": "^15.2.4",
     "npm-force-resolutions": "^0.0.10",
+    "patch-package": "^8.0.0",
     "pino-pretty": "^10.3.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
