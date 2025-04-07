@@ -36,11 +36,12 @@ export default function Header({ bannerVisible }: HeaderProps) {
           header-border
           mb-8
           border-b border-gray-800
+          rounded-lg
         `}
       >
         <div className="flex items-center">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity rounded-lg">
               <Logo size={36} />
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 text-transparent bg-clip-text"></span>
             </Link>
@@ -49,9 +50,9 @@ export default function Header({ bannerVisible }: HeaderProps) {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsReferralModalOpen(true)}
-            className="text-sm text-[#ab9ff2] hover:text-white transition-colors mr-2 flex items-center gap-1"
+            className="text-sm text-[#ab9ff2] hover:text-white transition-colors mr-2 flex items-center gap-1 rounded-lg"
           >
-            <span>🔗</span> Refer & Earn 50%
+            <span>🔗</span> Refer & Earn
           </button>
           <WalletMultiButton />
         </div>
@@ -59,23 +60,24 @@ export default function Header({ bannerVisible }: HeaderProps) {
 
       {/* Referral Modal */}
       {isReferralModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto pt-10 sm:pt-20">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 rounded-lg">
           {/* Overlay */}
           <div 
-            className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm transition-opacity" 
+            className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm transition-opacity rounded-lg" 
             onClick={() => setIsReferralModalOpen(false)}
           />
           
           {/* Modal content */}
           <div 
-            className="relative z-50 rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl mt-4"
+            className="relative z-50 rounded-2xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto shadow-2xl"
             style={{
               background: 'rgba(0, 0, 0, 0.95)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+              borderRadius: '1rem'
             }}
           >
-            <div className="p-5">
-              <div className="relative mb-6 sticky top-0 bg-black py-4 -mt-2 -mx-2 px-2 text-center">
+            <div className="p-5 rounded-2xl">
+              <div className="relative mb-6 sticky top-0 bg-black py-4 -mt-2 -mx-2 px-2 text-center rounded-t-2xl">
                 <h2 className="text-2xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600">Refer & Earn 50%</h2>
                 <button 
                   onClick={() => setIsReferralModalOpen(false)}
@@ -87,24 +89,20 @@ export default function Header({ bannerVisible }: HeaderProps) {
                 </button>
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', padding: '0 10px', marginBottom: '30px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', padding: '0 10px', marginBottom: '30px', borderRadius: '1rem' }}>
                 <div className="px-2">
-                  <p className="text-gray-200 p-3 pr-2">
+                  <p className="text-gray-200 p-3 pr-2 rounded-lg">
                   That's right, Fiddy/Fiddy - we believe in a fair 50/50 split! 💰</p>
-                  <p className="text-gray-200 p-3 pr-2">When someone uses your referral link to burn their empty token accounts, 
-                  you'll earn 50% of our burn fee.</p>
+                  <p className="text-gray-200 p-3 pr-2 rounded-lg">When someone uses your referral link to burn their empty token accounts, 
+                  you'll earn 50% of the burn fee.</p>
                   <div className="bg-gray-800 p-3 rounded-lg mt-4">
                     <h3 className="font-semibold mb-2 text-white">How it works:</h3>
-                    <ul className="list-disc list-inside text-gray-300">
-                      <li>Connect your wallet and get a unique referral link</li>
-                      <li>Share your unique referral link</li>
-                      <li>When someone burns token accounts using your link</li>
-                      <li>You earn 50% of the burn fee!</li>
+                    <ul className="list-disc list-inside text-gray-300 rounded-lg">
+                      <li>- Connect your wallet and get a unique referral link</li>
+                      <li>- Share your unique referral link</li>
+                      <li>- You earn 50% of the burn fee!</li>
                     </ul>
                   </div>
-                  <p className="text-sm text-gray-400 p-3 mt-4">
-                    The more people you refer, the more you earn. Spread the word and start burning! 🔥
-                  </p>
                 </div>
               </div>
             </div>

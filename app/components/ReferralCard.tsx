@@ -69,7 +69,7 @@ export function ReferralCard() {
     if (!referralLink) return;
     
     const tweetText = encodeURIComponent(
-      `I'm using JeetBurner to claim rent from my empty token accounts on Solana. Use my referral link to get started: ${referralLink} #Solana #JeetBurner`
+      `I'm using JeetBurner to claim SOL from my empty token accounts. Use my link to get some SOL as well: ${referralLink} #Solana #JeetBurner`
     );
     
     const twitterUrl = `https://twitter.com/intent/tweet?text=${tweetText}`;
@@ -142,7 +142,7 @@ export function ReferralCard() {
         </div>
         
         <div className="text-xs text-[#ab9ff2] mt-2">
-          <p>You will earn 50% of our burn fee when someone uses your link.</p>
+          <p>You will earn 50% of the burn fee when someone uses your link.</p>
         </div>
       </div>
     </div>

@@ -5,10 +5,15 @@ export function Footer() {
     <footer className="bg-gray-900 text-white py-8 text-sm" style={{ position: 'relative', zIndex: 10, marginTop: 20 }}>
       <div className="max-w-6xl mx-auto px-4 text-center">
         <div className="mb-4">
-          <h3 className="text-white font-medium mb-3"><i>"All jeeters will burn!" Elmo</i></h3>
+          <h3 className="text-white font-medium"><i>"All jeeters will burn!" Elmo</i></h3>
+          <br />
           <p className="text-gray-400 mb-4">
             Recover locked SOL from empty accounts on the Solana blockchain.
           </p>
+          <p className="text-gray-400 text-sm italic mb-4">
+            To keep this tool up and running, a 20% donation is included for the claimed SOL.
+          </p>
+          <br />
           <div className="flex items-center gap-2 justify-center">
             <span className="text-gray-400">Powered by</span>
             <a 
