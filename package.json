@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "preinstall": "npx npm-force-resolutions"
+    "lint": "next lint"
   },
   "resolutions": {
     "axios": "1.8.4"
@@ -35,7 +34,6 @@
     "@solana/wallet-adapter-solflare": "^0.6.29",
     "@solana/wallet-adapter-wallets": "^0.19.33",
     "@solana/web3.js": "^1.98.0",
-    "@trufflesuite/bigint-buffer": "^1.1.10",
     "axios": "1.8.4",
     "bigint-buffer": "^1.1.5",
     "framer-motion": "^12.0.6",
@@ -47,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@trufflesuite/bigint-buffer": "^1.1.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
