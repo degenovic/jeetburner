@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { generateReferralCode, storeReferralMapping, verifyReferralCode } from '../utils/referral';
 import { trackEvent } from '../utils/analytics';
+import { ReferralEarnings } from './ReferralEarnings';
 
 export function ReferralCard() {
   const { publicKey, connected } = useWallet();
@@ -127,7 +128,7 @@ export function ReferralCard() {
         
         <div className="flex justify-between items-center">
           <div className="text-sm text-[#ab9ff2]">
-            <span className="font-semibold">Referral Code:</span> <span className="font-mono bg-[#8b4eff] px-1 py-0.5 rounded">{referralCode}</span>
+            <span className="font-semibold">You will earn 50% of the burn fee when someone uses your link.</span>
           </div>
           
           <button
@@ -141,8 +142,8 @@ export function ReferralCard() {
           </button>
         </div>
         
-        <div className="text-xs text-[#ab9ff2] mt-2">
-          <p>You will earn 50% of the burn fee when someone uses your link.</p>
+        <div className="mt-4">
+          <ReferralEarnings />
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { WalletContextState } from '@solana/wallet-adapter-react';
 import { getProvider, signAndSendTransaction } from './utils/phantom';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { trackWalletConnect } from './utils/analytics';
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction, ComputeBudgetProgram } from '@solana/web3.js';
 import * as spl from '@solana/spl-token';
 import { toast } from 'react-hot-toast';
 import Header from './components/Header';
@@ -18,8 +18,10 @@ import { Suspense } from 'react';
 import { connection } from './utils/connection';
 import PhantomBanner from './components/PhantomBanner';
 import { ReferralCard } from './components/ReferralCard';
-import { getReferrerFromUrl, calculateFeeDistribution, trackReferralVisit } from './utils/referral';
+import { getReferrerFromUrl, calculateAdjustedFeeDistribution, trackReferralVisit } from './utils/referral';
 import PumpFunDegenCTA from './components/PumpFunDegenCTA';
+import { createCombinedFeeTransferInstructions } from './utils/transaction';
+import { hasEnoughSolForFees } from './utils/fees';
 
 interface TokenAccount {
   pubkey: PublicKey;
@@ -58,6 +60,7 @@ function HomeContent() {
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isPhantomBannerVisible, setIsPhantomBannerVisible] = useState(true);
   const [referrerWallet, setReferrerWallet] = useState<string | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -73,6 +76,29 @@ function HomeContent() {
       }
     }
   }, []);
+  
+  // Fetch wallet balance when connected
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      if (publicKey && connected) {
+        try {
+          const balance = await connection.getBalance(publicKey);
+          setWalletBalance(balance);
+        } catch (error) {
+          console.error('Error fetching wallet balance:', error);
+        }
+      } else {
+        setWalletBalance(0);
+      }
+    };
+    
+    fetchWalletBalance();
+    
+    // Set up interval to refresh balance every 15 seconds
+    const intervalId = setInterval(fetchWalletBalance, 15000);
+    
+    return () => clearInterval(intervalId);
+  }, [publicKey, connected, connection]);
 
   // Generate random SOL amount based on a realistic 0.002 SOL per token account
   const generateRandomAmount = () => {
@@ -235,8 +261,19 @@ function HomeContent() {
   const fetchAccounts = useCallback(async (key: PublicKey) => {
     try {
       setLoading(true);
+      setAccounts([]);
+      setSelectedAccounts(new Set());
       setSearchError('');
+      setClaimError(null);
       setHasSearched(true);
+      
+      // Update wallet balance when fetching accounts
+      try {
+        const balance = await connection.getBalance(key);
+        setWalletBalance(balance);
+      } catch (error) {
+        console.error('Error fetching wallet balance:', error);
+      }
       
       const response = await fetch(`/api/accounts?pubkey=${key.toString()}`);
       if (!response.ok) {
@@ -346,6 +383,14 @@ function HomeContent() {
       toast.error('Please connect your wallet first');
       return;
     }
+    
+    // Check if wallet has enough SOL for the transaction
+    // For a single account burn with referral, we need approximately 3 instructions
+    const hasEnoughSol = hasEnoughSolForFees(walletBalance, 3, !!referrerWallet);
+    if (!hasEnoughSol) {
+      toast.error('Your wallet may not have enough SOL to complete this transaction. Please add more SOL to your wallet.');
+      return;
+    }
 
     try {
       toast.loading('Preparing transaction...', { id: 'transaction-prep' });
@@ -368,12 +413,18 @@ function HomeContent() {
       // Calculate fee amount (20% of the account's lamports)
       const feeAmount = Math.floor(account.lamports * FEE_PERCENTAGE);
       
-      // Calculate fee distribution with referral if applicable
-      const { feeWalletAmount, referrerAmount, referrerWallet: activeReferrer } = 
-        calculateFeeDistribution(feeAmount, referrerWallet);
+      // Calculate fee distribution with referral if applicable, using the adjusted calculation
+      // that accounts for the extra transaction fee when using a referral
+      const { feeWalletAmount, referrerWallet: activeReferrer } = 
+        calculateAdjustedFeeDistribution(feeAmount, referrerWallet);
       
       // Create instructions array
       const instructions = [
+        // Add compute budget instruction with minimal priority fee
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 1 // Minimum priority fee
+        }),
+        
         // Close account instruction
         spl.createCloseAccountInstruction(
           accountPubkey,
@@ -382,42 +433,18 @@ function HomeContent() {
         )
       ];
       
-      // Add fee transfer instructions if applicable
-      if (feeWalletAmount > 0) {
-        instructions.push(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: FEE_WALLET,
-            lamports: feeWalletAmount
-          })
-        );
-      }
+      // Add the fee transfer instructions - only to fee wallet
+      // Referral earnings are recorded in the database
+      const feeTransferInstructions = createCombinedFeeTransferInstructions(
+        publicKey,
+        FEE_WALLET,
+        feeWalletAmount,
+        null,  // No direct transfer to referrer
+        0      // No referrer amount
+      );
       
-      // Add referrer fee transfer if applicable
-      if (activeReferrer && referrerAmount > 0) {
-        try {
-          const referrerPubkey = new PublicKey(activeReferrer);
-          instructions.push(
-            SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: referrerPubkey,
-              lamports: referrerAmount
-            })
-          );
-        } catch (error) {
-          console.error('Invalid referrer public key:', error);
-          // If referrer pubkey is invalid, send the full fee to the fee wallet
-          if (referrerAmount > 0) {
-            instructions.push(
-              SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: FEE_WALLET,
-                lamports: referrerAmount
-              })
-            );
-          }
-        }
-      }
+      // Add all fee transfer instructions to the main instructions array
+      instructions.push(...feeTransferInstructions);
 
       toast.loading('Please approve the transaction in your wallet. This will close the account and return rent SOL minus a small fee.', { id: 'transaction-prep' });
       
@@ -426,6 +453,29 @@ function HomeContent() {
       toast.loading('Closing account...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
+      
+      // Record referral earnings in the database if there's a referrer
+      if (activeReferrer) {
+        try {
+          // Calculate the referrer's share (50% of the fee)
+          const referrerAmount = Math.floor(feeAmount * 0.5);
+          
+          await fetch('/api/referrals', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              referrerWallet: activeReferrer,
+              amount: referrerAmount,
+              burnTx: signature,
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to record referral earning:', error);
+          // Continue with the transaction even if recording the referral fails
+        }
+      }
       
       const netAmount = account.lamports - feeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
@@ -439,6 +489,17 @@ function HomeContent() {
   const handleBurnMultiple = useCallback(async (accountsToBurn: string[]) => {
     if (!publicKey || !connected) {
       toast.error('Please connect your wallet first');
+      return;
+    }
+    
+    // Calculate number of instructions based on number of accounts plus fee transfers
+    // Each account close is one instruction, plus 1-2 fee transfers depending on referral
+    const numInstructions = accountsToBurn.length + (!!referrerWallet ? 2 : 1);
+    
+    // Check if wallet has enough SOL for the transaction
+    const hasEnoughSol = hasEnoughSolForFees(walletBalance, numInstructions, !!referrerWallet);
+    if (!hasEnoughSol) {
+      toast.error('Your wallet may not have enough SOL to complete this transaction. Please add more SOL to your wallet.');
       return;
     }
 
@@ -466,55 +527,40 @@ function HomeContent() {
       // Calculate fee (20% of total lamports)
       const totalFeeAmount = Math.floor(totalLamports * FEE_PERCENTAGE);
       
-      // Calculate fee distribution with referral if applicable
-      const { feeWalletAmount, referrerAmount, referrerWallet: activeReferrer } = 
-        calculateFeeDistribution(totalFeeAmount, referrerWallet);
+      // Calculate fee distribution with referral if applicable, using the adjusted calculation
+      // that accounts for the extra transaction fee when using a referral
+      const { feeWalletAmount, referrerWallet: activeReferrer } = 
+        calculateAdjustedFeeDistribution(totalFeeAmount, referrerWallet);
       
       // Create instructions array
-      const instructions = tokenAccountsToBurn.map(account => 
-        spl.createCloseAccountInstruction(
-          account.pubkey,
-          publicKey,  // Destination for reclaimed SOL
-          publicKey   // Owner of the account
+      const instructions = [
+        // Add compute budget instruction with minimal priority fee
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: 1 // Minimum priority fee
+        }),
+        
+        // Add all token account close instructions
+        ...tokenAccountsToBurn.map(account => 
+          spl.createCloseAccountInstruction(
+            account.pubkey,
+            publicKey,  // Destination for reclaimed SOL
+            publicKey   // Owner of the account
+          )
         )
+      ];
+      
+      // Add the fee transfer instructions - only to fee wallet
+      // Referral earnings are recorded in the database
+      const feeTransferInstructions = createCombinedFeeTransferInstructions(
+        publicKey,
+        FEE_WALLET,
+        feeWalletAmount,
+        null,  // No direct transfer to referrer
+        0      // No referrer amount
       );
       
-      // Add fee transfer instructions if applicable
-      if (feeWalletAmount > 0) {
-        instructions.push(
-          SystemProgram.transfer({
-            fromPubkey: publicKey,
-            toPubkey: FEE_WALLET,
-            lamports: feeWalletAmount
-          })
-        );
-      }
-      
-      // Add referrer fee transfer if applicable
-      if (activeReferrer && referrerAmount > 0) {
-        try {
-          const referrerPubkey = new PublicKey(activeReferrer);
-          instructions.push(
-            SystemProgram.transfer({
-              fromPubkey: publicKey,
-              toPubkey: referrerPubkey,
-              lamports: referrerAmount
-            })
-          );
-        } catch (error) {
-          console.error('Invalid referrer public key:', error);
-          // If referrer pubkey is invalid, send the full fee to the fee wallet
-          if (referrerAmount > 0) {
-            instructions.push(
-              SystemProgram.transfer({
-                fromPubkey: publicKey,
-                toPubkey: FEE_WALLET,
-                lamports: referrerAmount
-              })
-            );
-          }
-        }
-      }
+      // Add all fee transfer instructions to the main instructions array
+      instructions.push(...feeTransferInstructions);
       
       const numAccounts = tokenAccountsToBurn.length;
       toast.loading(`Please approve the transaction in your wallet. This will close ${numAccounts} ${numAccounts === 1 ? 'account' : 'accounts'} and return rent SOL minus a small fee.`, { id: 'transaction-prep' });
@@ -524,6 +570,29 @@ function HomeContent() {
       toast.loading('Closing accounts...', { id: 'transaction-prep' });
       
       await connection.confirmTransaction(signature);
+      
+      // Record referral earnings in the database if there's a referrer
+      if (activeReferrer) {
+        try {
+          // Calculate the referrer's share (50% of the fee)
+          const referrerAmount = Math.floor(totalFeeAmount * 0.5);
+          
+          await fetch('/api/referrals', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              referrerWallet: activeReferrer,
+              amount: referrerAmount,
+              burnTx: signature,
+            }),
+          });
+        } catch (error) {
+          console.error('Failed to record referral earning:', error);
+          // Continue with the transaction even if recording the referral fails
+        }
+      }
       
       const netAmount = totalLamports - totalFeeAmount;
       toast.success(`Successfully claimed ${(netAmount / LAMPORTS_PER_SOL).toFixed(4)} SOL!`, { id: 'transaction-prep' });
@@ -779,8 +848,8 @@ function HomeContent() {
                           <span className="inline-block dot-wave dot-3">.</span>
                         </span>
                       </div>
-                      <div className="text-sm text-gray-400 max-w-md">
-                        This may take a moment as we search for empty accounts that can be reclaimed
+                      <div className="h-6">  
+                        {/* Empty space to maintain layout */}
                       </div>
                     </div>
                   </div>

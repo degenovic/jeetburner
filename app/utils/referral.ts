@@ -194,3 +194,22 @@ export function calculateFeeDistribution(totalFee: number, referrerWallet: strin
     referrerWallet
   };
 }
+
+/**
+ * Calculate the fee distribution with referral, adjusted for transaction fees
+ * This is an alternative to the standard calculateFeeDistribution that accounts for
+ * the extra transaction fee when using a referral code
+ * 
+ * @param totalFee The total fee amount in lamports
+ * @param referrerWallet The wallet address of the referrer
+ * @returns An object with the fee distribution adjusted for transaction fees
+ */
+export function calculateAdjustedFeeDistribution(totalFee: number, referrerWallet: string | null): {
+  feeWalletAmount: number;
+  referrerAmount: number;
+  referrerWallet: string | null;
+} {
+  // Import dynamically to avoid circular dependencies
+  const { calculateAdjustedFeeDistribution: adjustFees } = require('./fees');
+  return adjustFees(totalFee, referrerWallet, !!referrerWallet);
+}

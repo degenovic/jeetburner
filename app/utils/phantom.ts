@@ -1,4 +1,10 @@
-import { Transaction, TransactionInstruction, Connection, PublicKey } from '@solana/web3.js';
+import { 
+  Transaction, 
+  TransactionInstruction, 
+  Connection, 
+  PublicKey,
+  Commitment
+} from '@solana/web3.js';
 
 // Add TypeScript declaration for window.solana
 declare global {
@@ -28,23 +34,24 @@ export const signAndSendTransaction = async (
   connection: Connection
 ) => {
   try {
+    // Get the latest blockhash
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    
     // Create a new transaction
     const transaction = new Transaction();
-    
-    // Get recent blockhash
-    const { blockhash } = await connection.getLatestBlockhash('confirmed');
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = provider.publicKey;
     
-    // Add instructions to transaction
+    // Add all instructions to the transaction
     instructions.forEach(instruction => {
       transaction.add(instruction);
     });
     
-    // Set transaction options
+    // Set transaction options with minimal preflight checks
     const options = {
-      skipPreflight: false,
-      maxRetries: 3
+      skipPreflight: true, // Skip preflight to reduce fees
+      maxRetries: 1,
+      preflightCommitment: 'processed' as Commitment // Use 'processed' instead of 'confirmed' for faster processing
     };
     
     // Try different signing methods depending on what the wallet supports
@@ -58,12 +65,12 @@ export const signAndSendTransaction = async (
     // Method 2: Using signTransaction and sendTransaction separately
     else if (provider.signTransaction && provider.sendTransaction) {
       const signedTx = await provider.signTransaction(transaction);
-      signature = await connection.sendRawTransaction(signedTx.serialize());
+      signature = await connection.sendRawTransaction(signedTx.serialize(), options);
     }
     // Method 3: Using signAllTransactions (some wallets only support this)
     else if (provider.signAllTransactions) {
       const signedTx = (await provider.signAllTransactions([transaction]))[0];
-      signature = await connection.sendRawTransaction(signedTx.serialize());
+      signature = await connection.sendRawTransaction(signedTx.serialize(), options);
     }
     // No supported method found
     else {
@@ -75,5 +82,43 @@ export const signAndSendTransaction = async (
   } catch (error) {
     console.error('Transaction failed:', error);
     throw error;
+  }
+};
+
+/**
+ * Estimates the transaction fee for a given set of instructions
+ * This can be used to check if a wallet has enough SOL before attempting a transaction
+ * 
+ * @param connection The Solana connection
+ * @param instructions The transaction instructions
+ * @param feePayer The public key of the fee payer
+ * @returns The estimated transaction fee in lamports
+ */
+export const estimateTransactionFee = async (
+  connection: Connection,
+  instructions: TransactionInstruction[],
+  feePayer: PublicKey
+): Promise<number> => {
+  try {
+    // Create a transaction with the instructions
+    const transaction = new Transaction();
+    const { blockhash } = await connection.getLatestBlockhash('confirmed');
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = feePayer;
+    
+    // Add all instructions
+    instructions.forEach(instruction => {
+      transaction.add(instruction);
+    });
+    
+    // Get the fee for the transaction
+    const fee = await transaction.getEstimatedFee(connection);
+    
+    // Add a buffer to account for potential fee increases (50% buffer)
+    return Math.ceil((fee || 5000) * 1.5); // Default to 5000 lamports if fee is null
+  } catch (error) {
+    console.error('Error estimating transaction fee:', error);
+    // Return a default high estimate if estimation fails
+    return 15000; // 0.000015 SOL as a safe default
   }
 };
